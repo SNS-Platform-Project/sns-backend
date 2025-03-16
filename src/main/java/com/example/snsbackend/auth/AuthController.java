@@ -1,6 +1,7 @@
 package com.example.snsbackend.auth;
 
 import com.example.snsbackend.dto.EmailRequest;
+import com.example.snsbackend.dto.LoginRequest;
 import com.example.snsbackend.dto.RegisterRequest;
 import com.example.snsbackend.email.EmailService;
 import com.example.snsbackend.jwt.JwtInfo;
@@ -25,6 +26,12 @@ public class AuthController {
     @PostMapping("/register")
     public JwtInfo register(@RequestBody @Valid RegisterRequest request) {
         return authService.register(request);
+    }
+
+    // 로그인
+    @PostMapping("/login")
+    public JwtInfo login(@RequestBody @Valid LoginRequest request) {
+        return authService.login(request);
     }
 
     // 이메일 인증 요청

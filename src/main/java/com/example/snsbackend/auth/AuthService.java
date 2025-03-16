@@ -1,6 +1,7 @@
 package com.example.snsbackend.auth;
 
 import com.example.snsbackend.dto.EmailRequest;
+import com.example.snsbackend.dto.LoginRequest;
 import com.example.snsbackend.dto.RegisterRequest;
 import com.example.snsbackend.email.EmailService;
 import com.example.snsbackend.jwt.JwtInfo;
@@ -46,6 +47,15 @@ public class AuthService {
     @Value("${AUTH_CODE_EXPIRE_TIME}")
     private long AUTH_CODE_EXPIRE_TIME;
 
+    // JWT 토큰 생성 후 Refresh Token 저장
+    private JwtInfo saveRefreshToken(String email) {
+        JwtInfo jwtInfo = jwtProvider.generateToken(email);
+        RefreshToken refreshToken = refreshTokenMapper.toRefreshToken(email, jwtInfo);
+        refreshTokenRepository.save(refreshToken);
+
+        return jwtInfo;
+    }
+
     // 회원 가입
     public JwtInfo register(RegisterRequest request) {
         Optional<Profile> email = profileRepository.findByEmail(request.getEmail());
@@ -74,17 +84,29 @@ public class AuthService {
 
         profileRepository.save(profile);
 
-        // JWT 토큰 생성 후 Refresh Token 저장
-        JwtInfo jwtInfo = jwtProvider.generateToken(request.getEmail());
-        RefreshToken refreshToken = refreshTokenMapper.toRefreshToken(request.getEmail(), jwtInfo);
-        refreshTokenRepository.save(refreshToken);
-
         log.info("registered successfully [email: " + request.getEmail() + "]");
-        return jwtInfo;
+
+        // JWT 토큰 생성 후 Refresh Token 저장
+        return saveRefreshToken(request.getEmail());
     }
 
     // 로그인
+    public JwtInfo login(LoginRequest request) {
+        Optional<Profile> profile = profileRepository.findByEmail(request.getId());
+        if (profile.isEmpty()) {
+            profile = profileRepository.findByUsername(request.getId());
+        }
 
+        // 비밀번호 검증
+        if (!passwordEncoder.matches(request.getPassword(), profile.get().getHashedPassword())) {
+            throw new RuntimeException("Invalid password");
+        }
+
+        log.info("login successfully [email: {}]", profile.get().getEmail());
+
+        // JWT 토큰 생성 후 Refresh Token 저장
+        return saveRefreshToken(request.getId());
+    }
 
     @Transactional
     // 인증번호 생성 후 이메일 전송
