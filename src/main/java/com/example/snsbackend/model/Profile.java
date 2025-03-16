@@ -8,8 +8,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@AllArgsConstructor
 @Data
+@AllArgsConstructor
 @Document(collection = "profiles")
 public class Profile {
     @Id
@@ -28,4 +28,5 @@ public class Profile {
     private Integer following;
     private String socialLinks;
     private String password;
+    private boolean isEmailVerified;
 }

@@ -24,8 +24,12 @@ import java.util.Optional;
 @Component
 public class JwtProvider {
     private SecretKey key;
-    private long accessExpTime = 1800000;
-    private long refreshExpTime = 3600000;
+
+    @Value("${ACCESS_TOKEN_EXPIRE_TIME}")
+    private long ACCESS_TOKEN_EXPIRE_TIME;
+
+    @Value("${REFRESH_TOKEN_EXPIRE_TIME}")
+    private long REFRESH_TOKEN_EXPIRE_TIME;
 
     private final RefreshTokenRepository refreshTokenRepository;
 
@@ -50,7 +54,7 @@ public class JwtProvider {
         String accessToken = Jwts.builder()
                 .claim("sub", id)
                 .claim("ise", now)
-                .claim("exp", new Date(nowMiles + accessExpTime))
+                .claim("exp", new Date(nowMiles + ACCESS_TOKEN_EXPIRE_TIME))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
@@ -58,7 +62,7 @@ public class JwtProvider {
         String refreshToken = Jwts.builder()
                 .claim("sub", id)
                 .claim("ise", now)
-                .claim("exp", new Date(nowMiles + refreshExpTime))
+                .claim("exp", new Date(nowMiles + REFRESH_TOKEN_EXPIRE_TIME))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
@@ -67,7 +71,7 @@ public class JwtProvider {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .refreshIseAt(fromDate(now))
-                .refreshExpAt(fromDate(new Date(nowMiles + refreshExpTime)))
+                .refreshExpAt(fromDate(new Date(nowMiles + REFRESH_TOKEN_EXPIRE_TIME)))
                 .build();
     }
 

@@ -31,8 +31,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/login").permitAll()
                         .requestMatchers("/api/v1/auth/register").permitAll()
-                        .requestMatchers("/api/v1/auth/request-email-verification").permitAll()
-                        .requestMatchers("/api/v1/auth/verify-email").permitAll()
+                        .requestMatchers("/api/v1/auth/email/verify").permitAll()
+                        .requestMatchers("/api/v1/auth/email/verify-request").permitAll()
                         .requestMatchers("/api/v1/auth/reset-password").permitAll()
                         .requestMatchers("/api/v1/auth/refresh").permitAll()
                         .anyRequest().authenticated())

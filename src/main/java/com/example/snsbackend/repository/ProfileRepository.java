@@ -1,7 +1,10 @@
 package com.example.snsbackend.repository;
 
 import com.example.snsbackend.model.Profile;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface ProfileRepository extends CrudRepository<Profile, Long> {
+import java.util.Optional;
+
+public interface ProfileRepository extends MongoRepository<Profile, String> {
+    Optional<Profile> findByEmail(String email);
 }
