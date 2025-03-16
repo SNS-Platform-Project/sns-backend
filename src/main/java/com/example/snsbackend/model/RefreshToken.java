@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
@@ -18,7 +19,12 @@ public class RefreshToken {
     @NotBlank
     private String email;
 
+    @Field(name = "refresh_token")
     private String refreshToken;
+
+    @Field(name = "issued_at")
     private LocalDateTime issuedAt;
+
+    @Field(name = "expired_at")
     private LocalDateTime expiredAt;
 }

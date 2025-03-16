@@ -36,7 +36,7 @@ public class EmailService {
     }
 
     // thymeleaf를 통한 html 적용
-    public String setContext(String authCode, String authCodeExp) {
+    private String setContext(String authCode, String authCodeExp) {
         Context context = new Context();
         context.setVariable("authCode", authCode);
         context.setVariable("authCodeExp", authCodeExp);

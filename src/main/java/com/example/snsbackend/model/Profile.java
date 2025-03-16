@@ -5,6 +5,7 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
 
@@ -22,11 +23,25 @@ public class Profile {
     private String email;
 
     private String bio;
+
+    @Field(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Field(name = "last_active")
     private LocalDateTime lastActive;
-    private Integer followers;
-    private Integer following;
+
+    @Field(name = "followers_count")
+    private Integer followersCount;
+
+    @Field(name = "following_count")
+    private Integer followingCount;
+
+    @Field(name = "social_links")
     private String socialLinks;
-    private String password;
-    private boolean isEmailVerified;
+
+    @Field(name = "hashed_password")
+    private String hashedPassword;
+
+    @Field(name = "email_verified")
+    private boolean emailVerified;
 }
