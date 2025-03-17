@@ -54,6 +54,9 @@ public class AuthService {
 
     // JWT 토큰 생성 후 Refresh Token 저장
     private JwtInfo saveRefreshToken(String email) {
+        // 기존 Refresh Token 삭제
+        refreshTokenRepository.deleteByEmail(email);
+
         JwtInfo jwtInfo = jwtProvider.generateToken(email);
         RefreshToken refreshToken = refreshTokenMapper.toRefreshToken(email, jwtInfo);
         refreshTokenRepository.save(refreshToken);
@@ -107,8 +110,6 @@ public class AuthService {
         profile.setLastActive(LocalDateTime.now());
         profile.setHashedPassword(passwordEncoder.encode(request.getPassword()));
 
-        profileRepository.save(profile);
-
         log.info("registered successfully [email: " + request.getEmail() + "]");
 
         // JWT 토큰 생성 후 Refresh Token 저장
@@ -130,7 +131,7 @@ public class AuthService {
         log.info("login successfully [email: {}]", profile.get().getEmail());
 
         // JWT 토큰 생성 후 Refresh Token 저장
-        return saveRefreshToken(request.getId());
+        return saveRefreshToken(profile.get().getEmail());
     }
 
     @Transactional
@@ -156,6 +157,9 @@ public class AuthService {
         AuthCode code = authCodeMapper.toAuthCode(email.getEmail(), randomCode);
         code.setIssuedAt(now);
         code.setExpiredAt(expired);
+
+        // 이전의 인증번호 삭제
+        authCodeRepository.deleteByEmail(email.getEmail());
 
         return authCodeRepository.save(code);
     }

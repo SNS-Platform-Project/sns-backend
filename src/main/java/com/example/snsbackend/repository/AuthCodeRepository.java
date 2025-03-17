@@ -12,4 +12,6 @@ public interface AuthCodeRepository extends MongoRepository<AuthCode, String> {
     Optional<AuthCode> findByEmail(String email);
 
     List<AuthCode> findByExpiredAtBefore(LocalDateTime expiredAtBefore);
+
+    void deleteByEmail(String email);
 }
