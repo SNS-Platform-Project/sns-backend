@@ -137,7 +137,7 @@ public class AuthService {
     @Transactional
     // 인증번호 생성 후 이메일 전송
     public ResponseEntity<?> sendCodeToEmail(EmailRequest email) {
-        AuthCode authCode = createAuthCode(email);
+        AuthCode authCode = createAuthCode(email.getEmail());
         try {
             emailService.sendAuthCodeEmail(email.getEmail(), authCode.getAuthCode());
             log.info("Email sent successfully [email: {}]", email.getEmail());
@@ -149,17 +149,17 @@ public class AuthService {
     }
 
     // 인증번호 생성 및 저장
-    public AuthCode createAuthCode(EmailRequest email) {
+    private AuthCode createAuthCode(String email) {
         String randomCode = generateRandomCode(6);
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expired = now.plus(AUTH_CODE_EXPIRE_TIME, ChronoUnit.MILLIS);
 
-        AuthCode code = authCodeMapper.toAuthCode(email.getEmail(), randomCode);
+        AuthCode code = authCodeMapper.toAuthCode(email, randomCode);
         code.setIssuedAt(now);
         code.setExpiredAt(expired);
 
         // 이전의 인증번호 삭제
-        authCodeRepository.deleteByEmail(email.getEmail());
+        authCodeRepository.deleteByEmail(email);
 
         return authCodeRepository.save(code);
     }
