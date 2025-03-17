@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface AuthCodeRepository extends MongoRepository<AuthCode, String> {
     Optional<AuthCode> findByEmailAndAuthCode(String email, String authCode);
+    Optional<AuthCode> findByEmail(String email);
 
     List<AuthCode> findByExpiredAtBefore(LocalDateTime expiredAtBefore);
 }

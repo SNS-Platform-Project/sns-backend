@@ -20,6 +20,9 @@ public class AuthCode {
     @Field(name = "code")
     private String authCode;
 
+    @Field(name = "email_verified")
+    private boolean emailVerified;
+
     @Field(name = "issued_at")
     private LocalDateTime issuedAt;
 

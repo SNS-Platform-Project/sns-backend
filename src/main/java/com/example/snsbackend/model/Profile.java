@@ -41,7 +41,4 @@ public class Profile {
 
     @Field(name = "hashed_password")
     private String hashedPassword;
-
-    @Field(name = "email_verified")
-    private boolean emailVerified;
 }

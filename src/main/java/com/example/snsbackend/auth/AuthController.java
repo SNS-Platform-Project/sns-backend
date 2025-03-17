@@ -1,5 +1,6 @@
 package com.example.snsbackend.auth;
 
+import com.example.snsbackend.dto.AuthCodeRequest;
 import com.example.snsbackend.dto.EmailRequest;
 import com.example.snsbackend.dto.LoginRequest;
 import com.example.snsbackend.dto.RegisterRequest;
@@ -41,8 +42,8 @@ public class AuthController {
     }
 
     // 이메일 인증번호 확인
-//    @PostMapping("/email/verify")
-//    public ResponseEntity<?> verifyEmail(@RequestBody String email, String authCode) {
-//        return authService.verifyEmail(email, authCode);
-//    }
+    @PostMapping("/email/verify")
+    public ResponseEntity<?> verifyEmail(@RequestBody @Valid AuthCodeRequest request) {
+        return authService.verifyEmail(request);
+    }
 }

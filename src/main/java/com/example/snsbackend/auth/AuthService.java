@@ -1,5 +1,6 @@
 package com.example.snsbackend.auth;
 
+import com.example.snsbackend.dto.AuthCodeRequest;
 import com.example.snsbackend.dto.EmailRequest;
 import com.example.snsbackend.dto.LoginRequest;
 import com.example.snsbackend.dto.RegisterRequest;
@@ -29,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
@@ -47,6 +49,9 @@ public class AuthService {
     @Value("${AUTH_CODE_EXPIRE_TIME}")
     private long AUTH_CODE_EXPIRE_TIME;
 
+    private final Pattern EMAIL_PATTERN = Pattern.compile("^(?=.{1,256})([a-zA-Z0-9._%+-]{1,64})@((?:(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}|(?:\\d{1,3}\\.){3}\\d{1,3}))$");
+    private final Pattern USERNAME_PATTERN = Pattern.compile("^(?=.{3,30}$)(?!.*\\.\\.)[a-z0-9._]+$");
+
     // JWT 토큰 생성 후 Refresh Token 저장
     private JwtInfo saveRefreshToken(String email) {
         JwtInfo jwtInfo = jwtProvider.generateToken(email);
@@ -58,9 +63,25 @@ public class AuthService {
 
     // 회원 가입
     public JwtInfo register(RegisterRequest request) {
+        if (!EMAIL_PATTERN.matcher(request.getEmail()).matches()) {
+            throw new RuntimeException("Invalid email format. [email: " + request.getEmail() + "]");
+        }
+
         Optional<Profile> email = profileRepository.findByEmail(request.getEmail());
         if (email.isPresent()) {
             throw new RuntimeException("This email already exists. [email: " + request.getEmail() + "]");
+        }
+
+        if (request.getUsername().length() > 30) {
+            throw new RuntimeException("Username too long. [username: " + request.getUsername() + "]");
+        }
+
+        if (request.getUsername().length() < 3) {
+            throw new RuntimeException("Username too short. [Username: " + request.getUsername() + "]");
+        }
+
+        if (!USERNAME_PATTERN.matcher(request.getUsername()).matches()) {
+            throw new RuntimeException("Invalid username format. [username: " + request.getUsername() + "]");
         }
 
         Optional<Profile> username = profileRepository.findByUsername(request.getUsername());
@@ -72,15 +93,19 @@ public class AuthService {
             throw new RuntimeException("Password too short");
         }
 
-        if (!verifyEmail(request.getEmail(), request.getAuthCode())) {
-            throw new RuntimeException("This email is not verified. [email: " + request.getEmail() + "]");
-        }
+        Optional<AuthCode> authCode = authCodeRepository.findByEmail(request.getEmail());
+        authCode.ifPresentOrElse(code -> {
+            if (!code.isEmailVerified()) {
+                throw new RuntimeException("This email is not verified. [email: " + request.getEmail() + "]");
+            }
+        }, () -> {
+            throw new RuntimeException("No Auth Code found. [email: " + request.getEmail() + "]");
+        });
 
         // 사용자 정보 저장
         Profile profile = profileMapper.toProfile(request);
         profile.setLastActive(LocalDateTime.now());
         profile.setHashedPassword(passwordEncoder.encode(request.getPassword()));
-        profile.setEmailVerified(true); // 어차피 인증번호 안 맞으면 가입 못 하는데 이걸 DB에 저장할 필요가 있나?
 
         profileRepository.save(profile);
 
@@ -150,17 +175,17 @@ public class AuthService {
     }
 
     // 인증번호 검증
-    private boolean verifyEmail(String email, String authCode) {
-        return authCodeRepository.findByEmailAndAuthCode(email, authCode)
-                .map(code -> code.getExpiredAt().isAfter(LocalDateTime.now()))
+    public ResponseEntity<?> verifyEmail(AuthCodeRequest request) {
+        boolean isVerified = authCodeRepository.findByEmailAndAuthCode(request.getEmail(), request.getAuthCode())
+                .map(c -> c.getExpiredAt().isAfter(LocalDateTime.now()))
                 .orElse(false);
 
-//        return profileRepository.findByEmail(email)
-//                .map(profile -> {
-//                    profile.setEmailVerified(isVerified);
-//                    profileRepository.save(profile);
-//                    return ResponseEntity.ok().build();
-//                }).orElse(ResponseEntity.notFound().build());
+        return authCodeRepository.findByEmail(request.getEmail())
+                .map(authCode -> {
+                    authCode.setEmailVerified(isVerified);
+                    authCodeRepository.save(authCode);
+                    return ResponseEntity.ok().build();
+                }).orElse(ResponseEntity.notFound().build());
     }
 
     // 만료된 인증번호 매일 자정마다 삭제
