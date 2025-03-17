@@ -50,7 +50,7 @@ public class AuthService {
     private long AUTH_CODE_EXPIRE_TIME;
 
     private final Pattern EMAIL_PATTERN = Pattern.compile("^(?=.{1,256})([a-zA-Z0-9._%+-]{1,64})@((?:(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}|(?:\\d{1,3}\\.){3}\\d{1,3}))$");
-    private final Pattern USERNAME_PATTERN = Pattern.compile("^(?=.{3,30}$)(?!.*\\.\\.)[a-z0-9._]+$");
+    private final Pattern USERNAME_PATTERN = Pattern.compile("^(?!^\\.)(?!.*\\.$)(?!.*\\.\\.)(?=.{3,30}$)[a-z0-9._]+$");
 
     // JWT 토큰 생성 후 Refresh Token 저장
     private JwtInfo saveRefreshToken(String email) {
@@ -109,6 +109,8 @@ public class AuthService {
         Profile profile = profileMapper.toProfile(request);
         profile.setLastActive(LocalDateTime.now());
         profile.setHashedPassword(passwordEncoder.encode(request.getPassword()));
+
+        profileRepository.save(profile);
 
         log.info("registered successfully [email: " + request.getEmail() + "]");
 
