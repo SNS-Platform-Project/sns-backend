@@ -22,6 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +48,7 @@ public class AuthService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
     @Value("${AUTH_CODE_EXPIRE_TIME}")
     private long AUTH_CODE_EXPIRE_TIME;
@@ -53,12 +57,12 @@ public class AuthService {
     private final Pattern USERNAME_PATTERN = Pattern.compile("^(?!^\\.)(?!.*\\.$)(?!.*\\.\\.)(?=.{3,30}$)[a-z0-9._]+$");
 
     // JWT 토큰 생성 후 Refresh Token 저장
-    private JwtInfo saveRefreshToken(String email) {
+    private JwtInfo saveRefreshToken(String userId) {
         // 기존 Refresh Token 삭제
-        refreshTokenRepository.deleteByEmail(email);
+        refreshTokenRepository.deleteByUserId(userId);
 
-        JwtInfo jwtInfo = jwtProvider.generateToken(email);
-        RefreshToken refreshToken = refreshTokenMapper.toRefreshToken(email, jwtInfo);
+        JwtInfo jwtInfo = jwtProvider.generateToken(userId);
+        RefreshToken refreshToken = refreshTokenMapper.toRefreshToken(userId, jwtInfo);
         refreshTokenRepository.save(refreshToken);
 
         return jwtInfo;
@@ -112,28 +116,28 @@ public class AuthService {
 
         profileRepository.save(profile);
 
-        log.info("registered successfully [email: " + request.getEmail() + "]");
+        log.info("registered successfully [userid: " + profile.getId() + "]");
 
         // JWT 토큰 생성 후 Refresh Token 저장
-        return saveRefreshToken(request.getEmail());
+        return saveRefreshToken(profile.getId());
     }
 
     // 로그인
     public JwtInfo login(LoginRequest request) {
-        Optional<Profile> profile = profileRepository.findByEmail(request.getId());
-        if (profile.isEmpty()) {
-            profile = profileRepository.findByUsername(request.getId());
-        }
+        // AuthenticationManager은 AuthenticationProvider들을 순회하며 UserDetailsService를 호출한다.
+        // 이때 CustomUserDetailsService를 새로 Service에 등록했기 때문에 커스텀된 구현체가 인식되며,
+        // overriding 된 loadUserByUsername 함수가 호출된다.
+        // UserDetails에 있는 사용자 비밀번호와 입력된 비밀번호를 비교하여 인증에 성공하면 Authentication 객체가 반환됨
 
-        // 비밀번호 검증
-        if (!passwordEncoder.matches(request.getPassword(), profile.get().getHashedPassword())) {
-            throw new RuntimeException("Invalid password");
-        }
+        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+                new UsernamePasswordAuthenticationToken(request.getId(), request.getPassword())
+        );
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        log.info("login successfully [email: {}]", profile.get().getEmail());
+        log.info("login successfully [username: {}]", userDetails.getUsername());
 
         // JWT 토큰 생성 후 Refresh Token 저장
-        return saveRefreshToken(profile.get().getEmail());
+        return saveRefreshToken(userDetails.getUserId());
     }
 
     @Transactional

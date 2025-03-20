@@ -5,5 +5,5 @@ import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface RefreshTokenRepository extends MongoRepository<RefreshToken, String> {
-    void deleteByEmail(@NotBlank String email);
+    void deleteByUserId(@NotBlank String userId);
 }

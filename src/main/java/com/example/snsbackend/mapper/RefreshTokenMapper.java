@@ -8,9 +8,9 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface RefreshTokenMapper {
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "email", source = "email")
+    @Mapping(target = "userId", source = "userId")
     @Mapping(target = "refreshToken", source = "jwtInfo.refreshToken")
     @Mapping(target = "issuedAt", source = "jwtInfo.refreshIseAt")
     @Mapping(target = "expiredAt", source = "jwtInfo.refreshExpAt")
-    RefreshToken toRefreshToken(String email, JwtInfo jwtInfo);
+    RefreshToken toRefreshToken(String userId, JwtInfo jwtInfo);
 }

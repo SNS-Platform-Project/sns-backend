@@ -17,7 +17,7 @@ public class RefreshToken {
     private String id;
 
     @NotBlank
-    private String email;
+    private String userId;
 
     @Field(name = "refresh_token")
     private String refreshToken;
