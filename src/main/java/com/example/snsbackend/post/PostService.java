@@ -1,33 +1,24 @@
-package com.example.snsbackend.domain;
+package com.example.snsbackend.post;
 
+import com.example.snsbackend.auth.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
 import com.example.snsbackend.repository.PostRepository;
 import com.example.snsbackend.repository.QuotePostRepository;
 import com.example.snsbackend.repository.RegularPostRepository;
 import com.example.snsbackend.repository.RepostRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.Document;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.Objects;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class PostService {
-    @Autowired
-    private MongoTemplate mongoTemplate;
-
     private final RegularPostRepository regularPostRepository;
     private final QuotePostRepository quotePostRepository;
     private final RepostRepository repostRepository;
@@ -38,9 +29,8 @@ public class PostService {
     }
 
     public void createPost(PostRequest content) {
-        //Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        //String userId = authentication.getName();
-        // 인증객체에서 유저정보 가져와서 넣어야함
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         RegularPost newPost = new RegularPost();
         newPost.setType("post");
@@ -48,13 +38,16 @@ public class PostService {
         newPost.setHashtags(content.getHashtags());
         newPost.setMentions(content.getMentions());
         newPost.setCreatedAt(new Date());
-        newPost.setUser(new User("test", "test"));
+        newPost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
         newPost.setStat(new Stat());
 
         regularPostRepository.save(newPost);
     }
 
     public void createQuote(String postId, PostRequest content) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
         QuotePost newPost = new QuotePost();
         newPost.setType("quote");
         newPost.setContent(content.getContent());
@@ -62,17 +55,20 @@ public class PostService {
         newPost.setMentions(content.getMentions());
         newPost.setCreatedAt(new Date());
         newPost.setOriginal_post_id(postId);
-        newPost.setUser(new User("test", "test"));
+        newPost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
         newPost.setStat(new Stat());
 
         quotePostRepository.save(newPost);
     }
 
     public void createRepost(String postId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
         Repost repost = new Repost();
         repost.setType("repost");
         repost.setOriginal_post_id(postId);
-        repost.setUser(new User("test", "test"));
+        repost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
         repost.setCreatedAt(new Date());
 
         repostRepository.save(repost);

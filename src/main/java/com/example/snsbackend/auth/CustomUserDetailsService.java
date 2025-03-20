@@ -1,6 +1,5 @@
 package com.example.snsbackend.auth;
 
-import com.example.snsbackend.model.Profile;
 import com.example.snsbackend.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

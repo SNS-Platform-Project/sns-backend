@@ -1,20 +1,12 @@
-package com.example.snsbackend.domain;
+package com.example.snsbackend.post;
 
+import com.example.snsbackend.auth.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.Post;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.aggregation.Aggregation;
-import org.springframework.data.mongodb.core.aggregation.AggregationResults;
-import org.springframework.data.mongodb.core.aggregation.LookupOperation;
-import org.springframework.data.mongodb.core.aggregation.MatchOperation;
-import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -24,7 +16,7 @@ public class PostController {
     private final PostService postService;
 
     @GetMapping("/{postId}")
-    public Post getPost(@PathVariable String postId) throws JsonProcessingException {
+    public Post getPost(@PathVariable String postId) {
         return postService.getPost(postId);
     }
 
@@ -41,4 +33,11 @@ public class PostController {
     public void createRePost(@PathVariable String postId) {
         postService.createRepost(postId);
     }
+
+    @DeleteMapping("/{postId}")
+    public void deletePost(@PathVariable String postId) {
+
+    }
 }
+
+
