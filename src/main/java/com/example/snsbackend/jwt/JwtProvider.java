@@ -1,6 +1,5 @@
 package com.example.snsbackend.jwt;
 
-import com.example.snsbackend.auth.CustomUserDetailsService;
 import com.example.snsbackend.model.RefreshToken;
 import com.example.snsbackend.repository.RefreshTokenRepository;
 import io.jsonwebtoken.*;
@@ -81,7 +80,7 @@ public class JwtProvider {
         Claims claims = parseToken(accessToken);
         // claims에 저장된 Sub(user id)로 기타 정보 검색
         UserDetails userDetails = customUserDetailsService.loadUserById(claims.getSubject());
-        // UserDetails principal = new User(claims.getSubject(), "", Collections.emptyList());
+
         return new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities());
     }
 

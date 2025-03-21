@@ -1,4 +1,4 @@
-package com.example.snsbackend.auth;
+package com.example.snsbackend.jwt;
 
 import com.example.snsbackend.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;

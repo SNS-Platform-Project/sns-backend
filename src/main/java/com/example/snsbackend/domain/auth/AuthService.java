@@ -1,10 +1,10 @@
-package com.example.snsbackend.auth;
+package com.example.snsbackend.domain.auth;
 
 import com.example.snsbackend.dto.AuthCodeRequest;
 import com.example.snsbackend.dto.EmailRequest;
 import com.example.snsbackend.dto.LoginRequest;
 import com.example.snsbackend.dto.RegisterRequest;
-import com.example.snsbackend.email.EmailService;
+import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.jwt.JwtInfo;
 import com.example.snsbackend.jwt.JwtProvider;
 import com.example.snsbackend.mapper.AuthCodeMapper;
@@ -130,7 +130,7 @@ public class AuthService {
         // UserDetails에 있는 사용자 비밀번호와 입력된 비밀번호를 비교하여 인증에 성공하면 Authentication 객체가 반환됨
 
         Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
-                new UsernamePasswordAuthenticationToken(request.getId(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword())
         );
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 

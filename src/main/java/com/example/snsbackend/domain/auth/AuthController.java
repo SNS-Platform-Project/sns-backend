@@ -1,10 +1,9 @@
-package com.example.snsbackend.auth;
+package com.example.snsbackend.domain.auth;
 
 import com.example.snsbackend.dto.AuthCodeRequest;
 import com.example.snsbackend.dto.EmailRequest;
 import com.example.snsbackend.dto.LoginRequest;
 import com.example.snsbackend.dto.RegisterRequest;
-import com.example.snsbackend.email.EmailService;
 import com.example.snsbackend.jwt.JwtInfo;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

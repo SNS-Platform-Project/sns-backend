@@ -1,11 +1,9 @@
-package com.example.snsbackend.post;
+package com.example.snsbackend.domain.post;
 
-import com.example.snsbackend.auth.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.Post;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -30,7 +28,7 @@ public class PostController {
         postService.createQuote(postId, content);
     }
     @PostMapping("/{postId}/repost")
-    public void createRePost(@PathVariable String postId) {
+    public void createRepost(@PathVariable String postId) {
         postService.createRepost(postId);
     }
 

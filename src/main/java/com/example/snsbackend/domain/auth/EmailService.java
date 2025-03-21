@@ -1,4 +1,4 @@
-package com.example.snsbackend.email;
+package com.example.snsbackend.domain.auth;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;

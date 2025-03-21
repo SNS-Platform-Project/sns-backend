@@ -1,6 +1,6 @@
-package com.example.snsbackend.post;
+package com.example.snsbackend.domain.post;
 
-import com.example.snsbackend.auth.CustomUserDetails;
+import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
 import com.example.snsbackend.repository.PostRepository;

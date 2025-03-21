@@ -1,4 +1,4 @@
-package com.example.snsbackend.auth;
+package com.example.snsbackend.jwt;
 
 import com.example.snsbackend.model.Profile;
 import lombok.Getter;
