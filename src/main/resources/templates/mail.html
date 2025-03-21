@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+    <table style="width: 100%; border: 0; border-collapse: collapse;">
+        <!-- Main -->
+        <tbody>
+            <tr>
+                <td style="background-color: #212429; padding: 80px;">
+                    <table style="width: 100%; border: 0; border-collapse: collapse;">
+                        <!-- Logo -->
+                        <tbody>
+                            <tr>
+                                <td style="font-size: 0pt; line-height: 0pt; text-align: left; padding-bottom: 45px;">
+                                    <a href="https://naver.com/" target="_blank" rel="noreferrer noopener">
+                                        <img src="@{/poImg.jpg}" style="width: 615px; height: 88px; border: 0;" alt="Logo" loading="lazy">
+                                    </a>
+                                </td>
+                            </tr>
+                        <!-- END Logo -->
+
+                        <!-- All content Exists within this table column -->
+                        <tr>
+                            <td>
+                                <table style="width: 100%; border: 0; border-collapse: collapse;">
+                                    <tbody>
+                                    <tr>
+                                        <td style="padding-bottom: 70px;">
+                                            <table style="width: 100%; border: 0; border-collapse: collapse; background-color: #17191c;">
+                                                <tbody>
+                                                <tr>
+                                                    <td style="padding: 30px 56px;">
+                                                        <table style="width: 100%; border: 0; border-collapse: collapse;">
+                                                            <tbody>
+                                                            <tr>
+                                                                <td style="font-size: 25px; line-height: 30px; font-family: Arial, sans-serif, 'Motiva Sans'; color: #f1f1f1; text-align: center; letter-spacing: 1px;">
+                                                                    인증번호
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="padding-bottom: 16px"></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td style="font-size: 48px; line-height: 52px; font-family: Arial, sans-serif, 'Motiva Sans'; color: #3a9aed; font-weight: bold; text-align: center;">
+                                                                    <span th:text="${authCode}"></span>
+                                                                </td>
+                                                            </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                                <table style="width: 100%; border: 0; border-collapse: collapse;">
+                                    <tbody>
+                                        <tr>
+                                            <td style="font-size: 18px; line-height: 25px; font-family: Arial, sans-serif, 'Motiva Sans'; text-align: left; color: #dbdbdb; padding-bottom: 30px;">
+                                                안녕하세요, Stacks입니다.<br>
+                                                회원님의 계정 보호를 위해 본인 인증 절차를 진행하고 있습니다.<br>
+                                                위의 인증번호를 입력하여 본인 인증을 완료해 주세요.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table style="width: 100%; border: 0; border-collapse: collapse;">
+                                    <tbody>
+                                        <tr>
+                                            <td style="font-size: 15px; line-height: 25px; font-family: Arial, sans-serif, 'Motiva Sans'; text-align: left; color: #bfbfbf; padding-bottom: 30px;">
+                                                ※ 인증번호는 보안을 위해 <span th:text="${authCodeExp}"></span>분 후 만료됩니다.
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table style="width: 100%; border: 0; border-collapse: collapse;">
+                                    <tbody>
+                                    <tr>
+                                        <td style="font-size: 18px; line-height: 25px; font-family: Arial, sans-serif, 'Motiva Sans'; text-align: left; color: #dbdbdb; padding-bottom: 30px;">
+                                            감사합니다.<br>
+                                            Stacks 드림<br>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>
