@@ -79,14 +79,6 @@ public class AuthService {
             throw new RuntimeException("This email already exists. [email: " + request.getEmail() + "]");
         }
 
-        if (request.getUsername().length() > 30) {
-            throw new RuntimeException("Username too long. [username: " + request.getUsername() + "]");
-        }
-
-        if (request.getUsername().length() < 3) {
-            throw new RuntimeException("Username too short. [Username: " + request.getUsername() + "]");
-        }
-
         if (!USERNAME_PATTERN.matcher(request.getUsername()).matches()) {
             throw new RuntimeException("Invalid username format. [username: " + request.getUsername() + "]");
         }
@@ -94,10 +86,6 @@ public class AuthService {
         Optional<Profile> username = profileRepository.findByUsername(request.getUsername());
         if (username.isPresent()) {
             throw new RuntimeException("This username already exists. [username: " + request.getUsername() + "]");
-        }
-
-        if (request.getPassword().length() < 6) {
-            throw new RuntimeException("Password too short");
         }
 
         Optional<AuthCode> authCode = authCodeRepository.findByEmail(request.getEmail());
