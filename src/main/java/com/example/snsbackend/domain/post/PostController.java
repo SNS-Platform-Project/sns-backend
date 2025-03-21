@@ -41,6 +41,16 @@ public class PostController {
     public void undoRepost(@PathVariable String originalPostId) {
         postService.undoRepost(originalPostId);
     }
+
+    @PostMapping("/{postId}/like")
+    public void likePost(@PathVariable String postId) {
+        postService.likePost(postId);
+    }
+
+    @DeleteMapping("/{postId}/like")
+    public void undoLikePost(@PathVariable String postId) {
+        postService.undoLikePost(postId);
+    }
 }
 
 

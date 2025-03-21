@@ -15,7 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.List;
 
 @Service
 @Slf4j
@@ -26,6 +25,7 @@ public class PostService {
     private final RepostRepository repostRepository;
     private final PostRepository postRepository;
     private final MongoTemplate mongoTemplate;
+    private final PostLikeRepository postLikeRepository;
 
     public Post getPost(String postId) {
         return postRepository.findById(postId).orElse(null);
@@ -96,5 +96,28 @@ public class PostService {
         } else {
             throw new Exception("Unauthorized");
         }
+    }
+
+    public void likePost(String postId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
+
+        postLikeRepository.save(new PostLike(postId, userId, new Date()));
+        postStatUpdate(postId, "likes_count", 1);
+    }
+
+    public void undoLikePost(String postId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
+
+        postLikeRepository.deleteByPostIdAndUserId(postId, userId);
+        postStatUpdate(postId, "likes_count", -1);
+    }
+
+    private void postStatUpdate(String postId, String fieldName, Number inc) {
+        mongoTemplate.updateFirst(
+                new Query(Criteria.where("id").is(postId)),
+                new Update().inc(String.format("stat.%s", fieldName), inc),
+                Post.class);
     }
 }
