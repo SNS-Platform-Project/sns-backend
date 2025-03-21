@@ -4,4 +4,5 @@ import com.example.snsbackend.model.Repost;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface RepostRepository extends MongoRepository<Repost, String> {
+    void deleteByUserIdAndPostId(String userId, String postId);
 }
