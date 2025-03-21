@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
-@Document(collection = "auth_code")
+@Document(collection = "auth_codes")
 public class AuthCode {
     @Id
     private String id;
