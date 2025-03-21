@@ -4,6 +4,7 @@ import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
 import com.example.snsbackend.repository.*;
+import com.mongodb.client.result.DeleteResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -78,12 +79,16 @@ public class PostService {
 
     public void undoRepost(String originalPostId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = authentication.getName();
 
-        repostRepository.deleteByUserIdAndPostId(userDetails.getUserId(), originalPostId);
+        DeleteResult result = mongoTemplate.remove(
+                new Query(Criteria.where("userId").is(userId)
+                        .and("postId").is(originalPostId)), Repost.class);
 
-        // 기존 게시글의 repost_count 수치 감소
-        postStatUpdate(originalPostId, "repost_count", -1);
+        if (result.getDeletedCount() > 0) {
+            // 기존 게시글의 repost_count 수치 감소
+            postStatUpdate(originalPostId, "repost_count", -1);
+        }
     }
 
     public void deletePost(String postId) throws Exception {
@@ -110,8 +115,14 @@ public class PostService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
-        postLikeRepository.deleteByPostIdAndUserId(postId, userId);
-        postStatUpdate(postId, "likes_count", -1);
+        DeleteResult result = mongoTemplate.remove(
+                new Query(Criteria.where("userId").is(userId)
+                        .and("postId").is(postId)), PostLike.class);
+
+        if (result.getDeletedCount() > 0) {
+            // 기존 게시글의 likes_count 수치 감소
+            postStatUpdate(postId, "likes_count", -1);
+        }
     }
 
     private void postStatUpdate(String postId, String fieldName, Number inc) {
