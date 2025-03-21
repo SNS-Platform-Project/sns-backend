@@ -47,7 +47,7 @@ public class FollowService {
                         .anyMatch(existingFollowing ->existingFollowing.getFollowId().equals(followId));
 
         if (alreadyFollowing) {
-            throw new RuntimeException("Follow already exists");
+            throw new RuntimeException("Follow already exists [username: " + followName + "]");
         }
 
         following.getFollowings().add(follow);
@@ -56,7 +56,33 @@ public class FollowService {
         // 팔로잉 수 증가
         Profile profile = profileRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Profile not found [userId: " + userId + "]"));
-        profile.setFollowersCount(profile.getFollowersCount() + 1);
+        profile.setFollowingCount(profile.getFollowingCount() + 1);
+        profileRepository.save(profile);
+    }
+
+    // 언팔로우
+    public void unfollow(String followName) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        // 팔로잉 삭제
+        Following following = followingRepository.findByUserId(userId);
+        boolean removed = following.getFollowings().removeIf(existingFollowing ->existingFollowing.getUsername().equals(followName));
+        followingRepository.save(following);
+
+        if (following.getFollowings().isEmpty()) {
+            followingRepository.delete(following);
+        }
+
+        if (!removed) {
+            throw new RuntimeException("Following not found [username: " + followName + "]");
+        }
+
+        // 팔로잉 수 감소
+        Profile profile = profileRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Profile not found [userId: " + userId + "]"));
+        profile.setFollowingCount(profile.getFollowingCount() - 1);
         profileRepository.save(profile);
     }
 }
