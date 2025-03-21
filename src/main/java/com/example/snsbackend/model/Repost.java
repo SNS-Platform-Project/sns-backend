@@ -4,19 +4,23 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.Collection;
 import java.util.Date;
 
-@Document(collection = "posts")
+@Document(collection = "reposts")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-public class Repost extends Post {
-    @Field("original_post")
-    private String original_post_id;     // 원본 트윗 ID
+@CompoundIndex(def = "{'userId': 1, 'postId': 1}", unique = true)
+public class Repost {
+    @Field("user_id")
+    private String userId;
+    @Field("post_id")
+    private String postId;     // 원본 트윗 ID
+    @Field("created_at")
+    private Date createdAt;
 }

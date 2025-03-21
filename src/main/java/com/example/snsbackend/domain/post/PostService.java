@@ -3,10 +3,7 @@ package com.example.snsbackend.domain.post;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
-import com.example.snsbackend.repository.PostRepository;
-import com.example.snsbackend.repository.QuotePostRepository;
-import com.example.snsbackend.repository.RegularPostRepository;
-import com.example.snsbackend.repository.RepostRepository;
+import com.example.snsbackend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -73,37 +70,20 @@ public class PostService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        Repost repost = new Repost();
-        repost.setType("repost");
-        repost.setOriginal_post_id(originalPostId);
-        repost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
-        repost.setCreatedAt(new Date());
-
         // 기존 게시글의 repost_count 수치 증가
-        mongoTemplate.updateFirst(
-                new Query(Criteria.where("id").is(originalPostId)),
-                new Update().inc("stat.repost_count", 1),
-                Post.class);
+        postStatUpdate(originalPostId, "repost_count", 1);
 
-        repostRepository.save(repost);
+        repostRepository.save(new Repost(userDetails.getUserId(), originalPostId, new Date()));
     }
 
     public void undoRepost(String originalPostId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        Query query = new Query()
-                .addCriteria(Criteria.where("original_post").is(originalPostId))
-                .addCriteria(Criteria.where("user.user_id").is(userDetails.getUserId()));
-        List<Repost> repost = mongoTemplate.find(query, Repost.class);
+        repostRepository.deleteByUserIdAndPostId(userDetails.getUserId(), originalPostId);
 
-        repostRepository.delete(repost.getFirst());
-
-        // 기존 게시글의 repost_count 수치 증가
-        mongoTemplate.updateFirst(
-                new Query(Criteria.where("id").is(originalPostId)),
-                new Update().inc("stat.repost_count", -1),
-                Post.class);
+        // 기존 게시글의 repost_count 수치 감소
+        postStatUpdate(originalPostId, "repost_count", -1);
     }
 
     public void deletePost(String postId) throws Exception {
