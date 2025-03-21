@@ -37,6 +37,7 @@ public class PostService {
         newPost.setContent(content.getContent());
         newPost.setHashtags(content.getHashtags());
         newPost.setMentions(content.getMentions());
+        newPost.setImages(content.getImages());
         newPost.setCreatedAt(new Date());
         newPost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
         newPost.setStat(new Stat());
@@ -53,6 +54,7 @@ public class PostService {
         newPost.setContent(content.getContent());
         newPost.setHashtags(content.getHashtags());
         newPost.setMentions(content.getMentions());
+        newPost.setImages(content.getImages());
         newPost.setCreatedAt(new Date());
         newPost.setOriginal_post_id(postId);
         newPost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
