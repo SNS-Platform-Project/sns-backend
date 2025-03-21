@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -78,6 +79,12 @@ public class PostService {
         repost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
         repost.setCreatedAt(new Date());
 
+        // 기존 게시글의 repost_count 수치 증가
+        mongoTemplate.updateFirst(
+                new Query(Criteria.where("id").is(originalPostId)),
+                new Update().inc("stat.repost_count", 1),
+                Post.class);
+
         repostRepository.save(repost);
     }
 
@@ -89,7 +96,14 @@ public class PostService {
                 .addCriteria(Criteria.where("original_post").is(originalPostId))
                 .addCriteria(Criteria.where("user.user_id").is(userDetails.getUserId()));
         List<Repost> repost = mongoTemplate.find(query, Repost.class);
+
         repostRepository.delete(repost.getFirst());
+
+        // 기존 게시글의 repost_count 수치 증가
+        mongoTemplate.updateFirst(
+                new Query(Criteria.where("id").is(originalPostId)),
+                new Update().inc("stat.repost_count", -1),
+                Post.class);
     }
 
     public void deletePost(String postId) throws Exception {

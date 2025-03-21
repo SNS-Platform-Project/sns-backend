@@ -23,11 +23,11 @@ public class PostController {
         postService.createPost(content);
     }
 
-    @PostMapping("/{original_post_id}/quote")
+    @PostMapping("/{originalPostId}/quote")
     public void createQuotePost(@PathVariable String originalPostId, @RequestBody PostRequest content) {
         postService.createQuote(originalPostId, content);
     }
-    @PostMapping("/{original_post_id}/repost")
+    @PostMapping("/{originalPostId}/repost")
     public void createRepost(@PathVariable String originalPostId) {
         postService.createRepost(originalPostId);
     }
