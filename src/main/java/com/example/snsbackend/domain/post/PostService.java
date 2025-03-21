@@ -9,11 +9,15 @@ import com.example.snsbackend.repository.RegularPostRepository;
 import com.example.snsbackend.repository.RepostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -23,6 +27,7 @@ public class PostService {
     private final QuotePostRepository quotePostRepository;
     private final RepostRepository repostRepository;
     private final PostRepository postRepository;
+    private final MongoTemplate mongoTemplate;
 
     public Post getPost(String postId) {
         return postRepository.findById(postId).orElse(null);
@@ -45,7 +50,7 @@ public class PostService {
         regularPostRepository.save(newPost);
     }
 
-    public void createQuote(String postId, PostRequest content) {
+    public void createQuote(String originalPostId, PostRequest content) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
@@ -56,23 +61,46 @@ public class PostService {
         newPost.setMentions(content.getMentions());
         newPost.setImages(content.getImages());
         newPost.setCreatedAt(new Date());
-        newPost.setOriginal_post_id(postId);
+        newPost.setOriginal_post_id(originalPostId);
         newPost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
         newPost.setStat(new Stat());
 
         quotePostRepository.save(newPost);
     }
 
-    public void createRepost(String postId) {
+    public void createRepost(String originalPostId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         Repost repost = new Repost();
         repost.setType("repost");
-        repost.setOriginal_post_id(postId);
+        repost.setOriginal_post_id(originalPostId);
         repost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
         repost.setCreatedAt(new Date());
 
         repostRepository.save(repost);
+    }
+
+    public void undoRepost(String originalPostId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        Query query = new Query()
+                .addCriteria(Criteria.where("original_post").is(originalPostId))
+                .addCriteria(Criteria.where("user.user_id").is(userDetails.getUserId()));
+        List<Repost> repost = mongoTemplate.find(query, Repost.class);
+        repostRepository.delete(repost.getFirst());
+    }
+
+    public void deletePost(String postId) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        Post post = postRepository.findById(postId).orElseThrow(() -> new Exception("not found"));
+        if (post.getUser().getUserId().equals(userDetails.getUserId())) {
+            postRepository.delete(post);
+        } else {
+            throw new Exception("Unauthorized");
+        }
     }
 }

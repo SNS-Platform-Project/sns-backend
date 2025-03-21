@@ -23,18 +23,23 @@ public class PostController {
         postService.createPost(content);
     }
 
-    @PostMapping("/{postId}/quote")
-    public void createQuotePost(@PathVariable String postId, @RequestBody PostRequest content) {
-        postService.createQuote(postId, content);
+    @PostMapping("/{original_post_id}/quote")
+    public void createQuotePost(@PathVariable String originalPostId, @RequestBody PostRequest content) {
+        postService.createQuote(originalPostId, content);
     }
-    @PostMapping("/{postId}/repost")
-    public void createRepost(@PathVariable String postId) {
-        postService.createRepost(postId);
+    @PostMapping("/{original_post_id}/repost")
+    public void createRepost(@PathVariable String originalPostId) {
+        postService.createRepost(originalPostId);
     }
 
     @DeleteMapping("/{postId}")
-    public void deletePost(@PathVariable String postId) {
+    public void deletePost(@PathVariable String postId) throws Exception {
+        postService.deletePost(postId);
+    }
 
+    @DeleteMapping("/{originalPostId}/repost")
+    public void undoRepost(@PathVariable String originalPostId) {
+        postService.undoRepost(originalPostId);
     }
 }
 
