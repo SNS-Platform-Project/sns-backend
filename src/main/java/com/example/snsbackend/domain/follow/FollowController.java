@@ -10,14 +10,14 @@ public class FollowController {
     private final FollowService followService;
 
     // 팔로우
-    @PostMapping("/{username}/follow")
-    public void follow(@PathVariable String username) {
-        followService.follow(username);
+    @PostMapping("/{user_id}/follow")
+    public void follow(@PathVariable String user_id) {
+        followService.follow(user_id);
     }
 
      // 언팔로우
-     @PostMapping("/{username}/unfollow")
-     public void unfollow(@PathVariable String username) {
-        followService.unfollow(username);
+     @PostMapping("/{user_id}/unfollow")
+     public void unfollow(@PathVariable String user_id) {
+        followService.unfollow(user_id);
     }
 }
