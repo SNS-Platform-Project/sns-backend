@@ -2,7 +2,6 @@ package com.example.snsbackend.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.LocalDateTime;
@@ -11,7 +10,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Follow {
     @Field(name = "follow_id")
-    @Indexed(unique = true)
     private String followId;
 
     private String username;

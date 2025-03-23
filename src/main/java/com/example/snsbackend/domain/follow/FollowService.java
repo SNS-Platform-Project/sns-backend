@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 
@@ -30,32 +29,50 @@ public class FollowService {
     private final FollowerMapper followerMapper;
 
     // 팔로우
-    @Transactional
     public void follow(String followId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String userId = customUserDetails.getUserId();
         String username = customUserDetails.getUsername();
 
-        // 팔로잉 추가
-        following(userId, followId);
+        try {
+            // 팔로잉 추가
+            following(userId, followId);
+        } catch (RuntimeException e) {
+            unfollower(userId, followId);
+            throw new RuntimeException(e);
+        }
 
-        // 팔로워 추가
-        follower(userId, username, followId);
+        try {
+            // 팔로워 추가
+            follower(userId, username, followId);
+        } catch (RuntimeException e) {
+            unfollowing(userId, followId);
+            throw new RuntimeException(e);
+        }
     }
 
     // 언팔로우
-    @Transactional
     public void unfollow(String followId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String userId = customUserDetails.getUserId();
 
-        // 팔로잉 삭제
-        unfollowing(userId, followId);
+        try {
+            // 팔로잉 삭제
+            unfollowing(userId, followId);
+        } catch (RuntimeException e) {
+            unfollower(userId, followId);
+            throw new RuntimeException(e);
+        }
 
-        // 팔로워 삭제
-        unfollower(userId, followId);
+        try {
+            // 팔로워 삭제
+            unfollower(userId, followId);
+        } catch (RuntimeException e) {
+            unfollowing(userId, followId);
+            throw new RuntimeException(e);
+        }
     }
 
     // 팔로잉 추가
