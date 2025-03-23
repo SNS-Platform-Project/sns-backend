@@ -1,5 +1,7 @@
 package com.example.snsbackend.domain.follow;
 
+import com.example.snsbackend.model.Follower;
+import com.example.snsbackend.model.Following;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,5 +21,17 @@ public class FollowController {
      @PostMapping("/{user_id}/unfollow")
      public void unfollow(@PathVariable String user_id) {
         followService.unfollow(user_id);
+    }
+
+    // 팔로워 목록
+    @GetMapping("/followers")
+    public Follower follower() {
+        return followService.follower();
+    }
+
+    // 팔로잉 목록
+    @GetMapping("/followings")
+    public Following following() {
+        return followService.following();
     }
 }

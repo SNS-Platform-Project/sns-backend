@@ -75,6 +75,24 @@ public class FollowService {
         }
     }
 
+    // 팔로워 목록
+    public Follower follower() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        return followerRepository.findByUserId(userId);
+    }
+
+    // 팔로잉 목록
+    public Following following() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        return followingRepository.findByUserId(userId);
+    }
+
     // 팔로잉 추가
     private void following(String userId, String followId) {
         // 팔로잉 목록 유무 확인 (없으면 생성)
