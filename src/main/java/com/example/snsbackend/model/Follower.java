@@ -1,30 +1,24 @@
 package com.example.snsbackend.model;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
-@Document(collection = "refresh_tokens")
-public class RefreshToken {
+@Document(collection = "followers")
+public class Follower {
     @Id
     private String id;
 
     @Field(name = "user_id")
+    @Indexed(unique = true)
     private String userId;
 
-    @Field(name = "refresh_token")
-    private String refreshToken;
-
-    @Field(name = "issued_at")
-    private LocalDateTime issuedAt;
-
-    @Field(name = "expired_at")
-    private LocalDateTime expiredAt;
+    private List<Follow> followers;
 }
