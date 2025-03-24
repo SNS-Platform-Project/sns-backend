@@ -1,12 +1,13 @@
 package com.example.snsbackend.domain.post;
 
-import com.example.snsbackend.dto.CommentRequest;
-import com.example.snsbackend.dto.PostRequest;
-import com.example.snsbackend.dto.PostResponse;
-import com.example.snsbackend.dto.Response;
+import com.example.snsbackend.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.NoSuchElementException;
 
 @Slf4j
 @RestController
@@ -17,8 +18,8 @@ public class PostController {
     private final CommentService commentService;
 
     @GetMapping("/{postId}")
-    public Response<PostResponse> getPost(@PathVariable String postId) {
-        return postService.getPost(postId);
+    public ResponseEntity<?> getPost(@PathVariable String postId) {
+        return ApiResponse.success(postService.getPost(postId));
     }
 
     @PostMapping("/regular")
@@ -56,11 +57,22 @@ public class PostController {
     }
 
     @PostMapping("/{postId}/comments")
-    public void createComment(@PathVariable String postId, @RequestBody CommentRequest request) { commentService.createComment(postId, request);}
+    public ResponseEntity<?> createComment(@PathVariable String postId, @RequestBody CommentRequest request) {
+        try {
+            commentService.createComment(postId, request);
+            return ApiResponse.success();
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound();
+        }
+    }
 
-    @PostMapping("/comments/{commentId}/like")
-    public void likeComment(@PathVariable String commentId) {
-        commentService.likeComment(commentId);
+    @GetMapping("/{postId}/comments")
+    public ResponseEntity<?> getComments(@PathVariable String postId, @ModelAttribute PageParam pageParam) {
+        try {
+            return ApiResponse.success(commentService.getComments(postId, pageParam));
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound();
+        }
     }
 }
 

@@ -1,8 +1,7 @@
 package com.example.snsbackend.model;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -11,8 +10,12 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Setter
-@Document("comments")
+@Getter
+@Builder
+@Document(collection = "comments")
 public class Comment {
+    @Id
+    private String id;
     @Field("post_id")
     private String postId;
     @Field("user_id")

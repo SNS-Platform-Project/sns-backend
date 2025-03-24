@@ -32,16 +32,12 @@ public class PostService {
     private final PostLikeRepository postLikeRepository;
     private final ProfileRepository profileRepository;
 
-    public Response<PostResponse> getPost(String postId) {
+    public PostResponse getPost(String postId) {
         Post post = postRepository.findById(postId).orElse(null);
         Profile profile = profileRepository.findById(Objects.requireNonNull(post).getUserId()).orElse(null);
         User user = new User(Objects.requireNonNull(profile).getUsername(), profile.getProfilePictureUrl());
 
-        return new Response.Builder<PostResponse>()
-                .setSuccess(true)
-                .setMessage("게시글 조회에 성공했습니다.")
-                .setData(new PostResponse(post, user))
-                .build();
+        return new PostResponse(post, user);
     }
 
     public void createPost(PostRequest content) {
