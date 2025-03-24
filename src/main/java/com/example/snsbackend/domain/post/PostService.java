@@ -1,5 +1,7 @@
 package com.example.snsbackend.domain.post;
 
+import com.example.snsbackend.dto.PostResponse;
+import com.example.snsbackend.dto.Response;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
@@ -16,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -27,6 +30,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final MongoTemplate mongoTemplate;
     private final PostLikeRepository postLikeRepository;
+    private final ProfileRepository profileRepository;
 
     public Post getPost(String postId) {
         return postRepository.findById(postId).orElse(null);
@@ -43,7 +47,7 @@ public class PostService {
         newPost.setMentions(content.getMentions());
         newPost.setImages(content.getImages());
         newPost.setCreatedAt(new Date());
-        newPost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
+        newPost.setUserId(userDetails.getUserId());
         newPost.setStat(new Stat());
 
         regularPostRepository.save(newPost);
@@ -61,7 +65,7 @@ public class PostService {
         newPost.setImages(content.getImages());
         newPost.setCreatedAt(new Date());
         newPost.setOriginal_post_id(originalPostId);
-        newPost.setUser(new User(userDetails.getUserId(), userDetails.getUsername()));
+        newPost.setUserId(userDetails.getUserId());
         newPost.setStat(new Stat());
 
         quotePostRepository.save(newPost);
@@ -79,10 +83,10 @@ public class PostService {
 
     public void undoRepost(String originalPostId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userId = authentication.getName();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         DeleteResult result = mongoTemplate.remove(
-                new Query(Criteria.where("userId").is(userId)
+                new Query(Criteria.where("userId").is(userDetails.getUserId())
                         .and("postId").is(originalPostId)), Repost.class);
 
         if (result.getDeletedCount() > 0) {
@@ -96,7 +100,7 @@ public class PostService {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         Post post = postRepository.findById(postId).orElseThrow(() -> new Exception("not found"));
-        if (post.getUser().getUserId().equals(userDetails.getUserId())) {
+        if (post.getUserId().equals(userDetails.getUserId())) {
             postRepository.delete(post);
         } else {
             throw new Exception("Unauthorized");
