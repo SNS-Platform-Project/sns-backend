@@ -1,6 +1,8 @@
 package com.example.snsbackend.jwt;
 
+import com.example.snsbackend.model.AccessTokenBlackList;
 import com.example.snsbackend.model.RefreshToken;
+import com.example.snsbackend.repository.AccessTokenBlackListRepository;
 import com.example.snsbackend.repository.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -21,6 +23,7 @@ import java.util.Optional;
 @Slf4j
 @Component
 public class JwtProvider {
+    private final AccessTokenBlackListRepository accessTokenBlackListRepository;
     private SecretKey key;
 
     @Value("${ACCESS_TOKEN_EXPIRE_TIME}")
@@ -32,10 +35,11 @@ public class JwtProvider {
     private final RefreshTokenRepository refreshTokenRepository;
     private final CustomUserDetailsService customUserDetailsService;
 
-    public JwtProvider(@Value("${jwt.secret}") String key, RefreshTokenRepository refreshTokenRepository, CustomUserDetailsService customUserDetailsService) {
+    public JwtProvider(@Value("${jwt.secret}") String key, RefreshTokenRepository refreshTokenRepository, CustomUserDetailsService customUserDetailsService, AccessTokenBlackListRepository accessTokenBlackListRepository) {
         this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(key));
         this.refreshTokenRepository = refreshTokenRepository;
         this.customUserDetailsService = customUserDetailsService;
+        this.accessTokenBlackListRepository = accessTokenBlackListRepository;
     }
 
     private LocalDateTime fromDate(Date date) {
@@ -90,15 +94,15 @@ public class JwtProvider {
         return claims.getSubject();
     }
 
-    //TODO: 로그아웃(블랙리스트) 생성 후 마저 작업할 것
     // 토큰 정보 검증
-    /*public boolean validateToken(String token) {
+    public boolean validateToken(String token) {
         Jwts.parser()
                 .verifyWith(key)
                 .build()
-                .parseClaimsJws(token);
-        return
-    }*/
+                .parseSignedClaims(token);
+        Optional<AccessTokenBlackList> accessToken = accessTokenBlackListRepository.findByAccessToken(token);
+        return accessToken.isEmpty();
+    }
 
     // 토큰에서 claim 추출
     private Claims parseToken (String token) {

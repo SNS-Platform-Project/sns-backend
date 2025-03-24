@@ -7,16 +7,21 @@ import com.example.snsbackend.dto.RegisterRequest;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.jwt.JwtInfo;
 import com.example.snsbackend.jwt.JwtProvider;
+import com.example.snsbackend.jwt.TokenUtils;
+import com.example.snsbackend.mapper.AccessTokenBlackListMapper;
 import com.example.snsbackend.mapper.AuthCodeMapper;
 import com.example.snsbackend.mapper.ProfileMapper;
 import com.example.snsbackend.mapper.RefreshTokenMapper;
+import com.example.snsbackend.model.AccessTokenBlackList;
 import com.example.snsbackend.model.AuthCode;
 import com.example.snsbackend.model.Profile;
 import com.example.snsbackend.model.RefreshToken;
+import com.example.snsbackend.repository.AccessTokenBlackListRepository;
 import com.example.snsbackend.repository.AuthCodeRepository;
 import com.example.snsbackend.repository.ProfileRepository;
 import com.example.snsbackend.repository.RefreshTokenRepository;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +30,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,9 +48,11 @@ public class AuthService {
     private final AuthCodeMapper authCodeMapper;
     private final ProfileMapper profileMapper;
     private final RefreshTokenMapper refreshTokenMapper;
+    private final AccessTokenBlackListMapper accessTokenBlackListMapper;
     private final ProfileRepository profileRepository;
     private final AuthCodeRepository authCodeRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final AccessTokenBlackListRepository accessTokenBlackListRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
@@ -128,6 +136,35 @@ public class AuthService {
         return saveRefreshToken(userDetails.getUserId());
     }
 
+    // 로그아웃
+    public void logout(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+        String accessToken = TokenUtils.extractAccessTokenFromHeader(request);
+
+        // 블랙리스트에 Access Token 추가
+        AccessTokenBlackList accessTokenBlackList = accessTokenBlackListMapper.toAccessTokenBlackList(accessToken);
+        accessTokenBlackListRepository.save(accessTokenBlackList);
+
+        // Refresh Token 삭제
+        Optional<RefreshToken> refreshToken = refreshTokenRepository.findByUserId(userId);
+        refreshToken.ifPresentOrElse(token -> {
+            refreshTokenRepository.deleteByUserId(userId);
+        }, () -> {
+            throw new RuntimeException("No RefreshToken found. [userId: " + userId + "]");
+        });
+
+        log.info("logout successfully [userID: {}]", userId);
+    }
+
+    // 블랙리스트에 있는 만료된 토큰 삭제
+    @Scheduled(cron = "0 0 0/1 * * *")
+    public void removeAccessTokenBlackList() {
+        accessTokenBlackListRepository.deleteAll(accessTokenBlackListRepository.findByBlackAtBefore(LocalDateTime.now().minusHours(1)));
+        log.info("Expired token has been removed");
+    }
+
     @Transactional
     // 인증번호 생성 후 이메일 전송
     public ResponseEntity<?> sendCodeToEmail(EmailRequest email) {
@@ -190,8 +227,8 @@ public class AuthService {
         return ResponseEntity.ok().build();
     }
 
-    // 만료된 인증번호 매일 자정마다 삭제
-    @Scheduled(cron = "0 0 0 * * *")
+    // 만료된 인증번호 삭제
+    @Scheduled(cron = "0 0 0/1 * * *")
     public void removeAuthCode() {
         authCodeRepository.deleteAll(authCodeRepository.findByExpiredAtBefore(LocalDateTime.now()));
         log.info("Expired Auth Code has been removed");

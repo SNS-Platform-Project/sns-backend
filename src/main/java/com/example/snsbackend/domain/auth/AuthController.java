@@ -5,6 +5,7 @@ import com.example.snsbackend.dto.EmailRequest;
 import com.example.snsbackend.dto.LoginRequest;
 import com.example.snsbackend.dto.RegisterRequest;
 import com.example.snsbackend.jwt.JwtInfo;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,12 @@ public class AuthController {
     @PostMapping("/login")
     public JwtInfo login(@RequestBody @Valid LoginRequest request) {
         return authService.login(request);
+    }
+
+    // 로그아웃
+    @PostMapping("/logout")
+    public void logout(HttpServletRequest request) {
+        authService.logout(request);
     }
 
     // 이메일 인증 요청
