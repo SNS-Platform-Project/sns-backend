@@ -33,6 +33,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/register").permitAll()
                         .requestMatchers("/api/v1/auth/email/verify").permitAll()
                         .requestMatchers("/api/v1/auth/email/verify-request").permitAll()
+                        .requestMatchers("/api/v1/users/check-username").permitAll()
+                        .requestMatchers("/api/v1/users/check-email").permitAll()
                         .requestMatchers("/api/v1/auth/reset-password").permitAll()
                         .requestMatchers("/api/v1/auth/refresh").permitAll()
                         .anyRequest().authenticated())
