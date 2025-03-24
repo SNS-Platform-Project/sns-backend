@@ -25,6 +25,7 @@ public class CommentService {
     private final CommentLikeRepository commentLikeRepository;
     private final MongoTemplate mongoTemplate;
 
+    // TODO: 정밀한 테스트 필요.
     void createComment(String postId, CommentRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = authentication.getName();
@@ -34,6 +35,7 @@ public class CommentService {
                         request.getParentId(), new Date(), 0));
     }
 
+    // TODO: 정밀한 테스트 필요.
     @Transactional
     void likeComment(String commentId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
