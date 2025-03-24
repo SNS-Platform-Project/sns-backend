@@ -2,7 +2,8 @@ package com.example.snsbackend.domain.post;
 
 import com.example.snsbackend.dto.CommentRequest;
 import com.example.snsbackend.dto.PostRequest;
-import com.example.snsbackend.model.Post;
+import com.example.snsbackend.dto.PostResponse;
+import com.example.snsbackend.dto.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,7 @@ public class PostController {
     private final CommentService commentService;
 
     @GetMapping("/{postId}")
-    public Post getPost(@PathVariable String postId) {
+    public Response<PostResponse> getPost(@PathVariable String postId) {
         return postService.getPost(postId);
     }
 
