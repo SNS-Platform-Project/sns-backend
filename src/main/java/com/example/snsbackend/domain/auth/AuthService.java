@@ -20,6 +20,7 @@ import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -178,12 +179,23 @@ public class AuthService {
                 .map(c -> c.getExpiredAt().isAfter(LocalDateTime.now()))
                 .orElse(false);
 
-        return authCodeRepository.findByEmail(request.getEmail())
-                .map(authCode -> {
-                    authCode.setEmailVerified(isVerified);
-                    authCodeRepository.save(authCode);
-                    return ResponseEntity.ok().build();
-                }).orElse(ResponseEntity.notFound().build());
+        if (!isVerified) {
+            throw new RuntimeException("Invalid email verification code. [email: " + request.getEmail() + "]");
+        }
+
+        Optional<AuthCode> authCode = authCodeRepository.findByEmail(request.getEmail());
+        authCode.ifPresent(code -> {
+            code.setEmailVerified(isVerified);
+            authCodeRepository.save(code);
+        });
+        return ResponseEntity.ok().build();
+
+//        return authCodeRepository.findByEmail(request.getEmail())
+//                .map(authCode -> {
+//                    authCode.setEmailVerified(isVerified);
+//                    authCodeRepository.save(authCode);
+//                    return ResponseEntity.ok().build();
+//                }).orElse(ResponseEntity.notFound().build());
     }
 
     // 만료된 인증번호 매일 자정마다 삭제
