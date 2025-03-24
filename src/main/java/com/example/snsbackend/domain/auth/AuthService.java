@@ -122,7 +122,7 @@ public class AuthService {
         );
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        log.info("login successfully [username: {}]", userDetails.getUsername());
+        log.info("login successfully [userID: {}]", userDetails.getUserId());
 
         // JWT 토큰 생성 후 Refresh Token 저장
         return saveRefreshToken(userDetails.getUserId());

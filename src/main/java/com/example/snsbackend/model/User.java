@@ -11,8 +11,6 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @Getter
 @Setter
 public class User {
-    @Field("user_id")
-    private String userId;
-
     private String username;
+    private String profilePictureUrl;
 }

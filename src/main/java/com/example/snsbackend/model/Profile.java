@@ -24,6 +24,9 @@ public class Profile {
 
     private String bio;
 
+    @Field("profile_picture_url")
+    private String profilePictureUrl;
+
     @Field(name = "created_at")
     private LocalDateTime createdAt;
 

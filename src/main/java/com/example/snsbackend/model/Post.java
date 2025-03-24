@@ -18,7 +18,8 @@ public abstract class Post {
     @Field("type")
     private String type;
 
-    private User user;
+    @Field("user_id")
+    private String userId;
 
     @Field("created_at")
     private Date createdAt;  // 작성 시간
