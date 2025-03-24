@@ -1,5 +1,6 @@
 package com.example.snsbackend.domain.post;
 
+import com.example.snsbackend.dto.CommentRequest;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.Post;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/posts")
 public class PostController {
     private final PostService postService;
+    private final CommentService commentService;
 
     @GetMapping("/{postId}")
     public Post getPost(@PathVariable String postId) {
@@ -50,6 +52,14 @@ public class PostController {
     @DeleteMapping("/{postId}/like")
     public void undoLikePost(@PathVariable String postId) {
         postService.undoLikePost(postId);
+    }
+
+    @PostMapping("/{postId}/comments")
+    public void createComment(@PathVariable String postId, @RequestBody CommentRequest request) { commentService.createComment(postId, request);}
+
+    @PostMapping("/comments/{commentId}/like")
+    public void likeComment(@PathVariable String commentId) {
+        commentService.likeComment(commentId);
     }
 }
 
