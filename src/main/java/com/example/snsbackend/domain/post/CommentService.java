@@ -54,7 +54,7 @@ public class CommentService {
         } else {
             //  대댓글(리플)인 경우 (부모 ID가 있음)
             if (isCommentValid(request.getParentId(), postId)) {
-                replyRepository.save(new Reply(postId, userId, request.getParentId(), request.getContent()));
+                replyRepository.save(new Reply(postId, userId, request.getContent(), request.getParentId()));
                 log.info("사용자 {}가 댓글{}에 대댓글을 추가했습니다.", userId, request.getParentId());
                 // 부모 댓글의 리플 개수 증가
                 countUpdater.incrementCount(request.getParentId(), "replies_count", Comment.class);
@@ -84,7 +84,7 @@ public class CommentService {
 
         Comment comment = commentRepository.findById(commentId).orElseThrow(() -> {
             log.error("유효하지 않은 댓글 ID: {}", commentId);
-            return new NoSuchElementException();
+            return new NoSuchElementException("유효하지 않은 댓글 ID");
         });
         comment.setLikesCount(comment.getLikesCount() + 1);
         commentLikeRepository.save(new CommentLike(commentId, userId, new Date(), comment.getPostId()));
@@ -109,7 +109,7 @@ public class CommentService {
             log.info("사용자 {}가 댓글 {}에 좋아요를 삭제했습니다.", userId, commentId);
         } else {
             log.error("사용자 {}가 댓글 {}을 좋아요한 기록이 없습니다.", userId, commentId);
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("사용자의 댓글 좋아요 기록이 없음");
         }
     }
 
@@ -118,7 +118,7 @@ public class CommentService {
 
         if (!postRepository.existsById(postId)) {
             log.error("유효하지 않은 게시물 ID: {}", postId);
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
 
         // No offset 방식 페이징
@@ -150,7 +150,7 @@ public class CommentService {
 
         if (!commentRepository.existsById(commentId)) {
             log.error("유효하지 않은 댓글 ID: {}", commentId);
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("유효하지 않은 댓글 ID");
         }
 
         Query query = new Query().addCriteria(Criteria.where("parent_id").is(commentId));

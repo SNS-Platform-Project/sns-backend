@@ -26,7 +26,7 @@ public class CommentController {
         } catch (DuplicateKeyException e) {
             return ApiResponse.conflict();
         } catch (NoSuchElementException e) {
-            return ApiResponse.notFound();
+            return ApiResponse.notFound(e.getMessage());
         }
     }
 
@@ -37,7 +37,7 @@ public class CommentController {
             return ApiResponse.success();
 
         } catch (NoSuchElementException e) {
-            return ApiResponse.notFound();
+            return ApiResponse.notFound(e.getMessage());
         }
     }
 
@@ -46,7 +46,7 @@ public class CommentController {
         try {
             return ApiResponse.success(commentService.getReplies(commentId, pageParam));
         } catch (NoSuchElementException e) {
-            return ApiResponse.notFound();
+            return ApiResponse.notFound(e.getMessage());
         }
     }
 }

@@ -3,6 +3,7 @@ package com.example.snsbackend.domain.post;
 import com.example.snsbackend.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,22 +24,33 @@ public class PostController {
         try {
             return ApiResponse.success(postService.getPost(postId));
         } catch (NoSuchElementException e) {
-            return ApiResponse.notFound();
+            return ApiResponse.notFound(e.getMessage());
         }
     }
 
     @PostMapping("/regular")
-    public void createPost(@RequestBody PostRequest content) {
+    public ResponseEntity<ApiResponse<Void>> createPost(@RequestBody PostRequest content) {
         postService.createPost(content);
+        return ApiResponse.success();
     }
 
     @PostMapping("/{originalPostId}/quote")
-    public void createQuotePost(@PathVariable String originalPostId, @RequestBody PostRequest content) {
-        postService.createQuote(originalPostId, content);
+    public ResponseEntity<ApiResponse<Void>> createQuotePost(@PathVariable String originalPostId, @RequestBody PostRequest content) {
+        try {
+            postService.createQuote(originalPostId, content);
+            return ApiResponse.success();
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound(e.getMessage());
+        }
     }
     @PostMapping("/{originalPostId}/repost")
-    public void createRepost(@PathVariable String originalPostId) {
-        postService.createRepost(originalPostId);
+    public ResponseEntity<ApiResponse<Void>> createRepost(@PathVariable String originalPostId) {
+        try {
+            postService.createRepost(originalPostId);
+            return ApiResponse.success();
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{postId}")
@@ -54,18 +66,35 @@ public class PostController {
     }
 
     @DeleteMapping("/{originalPostId}/repost")
-    public void undoRepost(@PathVariable String originalPostId) {
-        postService.undoRepost(originalPostId);
+    public ResponseEntity<ApiResponse<Void>> undoRepost(@PathVariable String originalPostId) {
+        try {
+            postService.undoRepost(originalPostId);
+            return ApiResponse.success();
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound(e.getMessage());
+        }
     }
 
     @PostMapping("/{postId}/like")
-    public void likePost(@PathVariable String postId) {
-        postService.likePost(postId);
+    public ResponseEntity<ApiResponse<Void>> likePost(@PathVariable String postId) {
+        try {
+            postService.likePost(postId);
+            return ApiResponse.success();
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound(e.getMessage());
+        } catch (DuplicateKeyException e) {
+            return ApiResponse.conflict();
+        }
     }
 
     @DeleteMapping("/{postId}/like")
-    public void undoLikePost(@PathVariable String postId) {
-        postService.undoLikePost(postId);
+    public ResponseEntity<ApiResponse<Void>> undoLikePost(@PathVariable String postId) {
+        try {
+            postService.undoLikePost(postId);
+            return ApiResponse.success();
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound(e.getMessage());
+        }
     }
 
     @PostMapping("/{postId}/comments")
@@ -83,7 +112,7 @@ public class PostController {
         try {
             return ApiResponse.success(commentService.getComments(postId, pageParam));
         } catch (NoSuchElementException e) {
-            return ApiResponse.notFound();
+            return ApiResponse.notFound(e.getMessage());
         }
     }
 }

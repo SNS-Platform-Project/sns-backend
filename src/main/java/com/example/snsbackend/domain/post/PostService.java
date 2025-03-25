@@ -84,7 +84,7 @@ public class PostService {
 
         if (!postRepository.existsById(originalPostId)) {
             log.error("유효하지 않은 게시물 ID: {}", originalPostId);
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
 
         QuotePost newPost = new QuotePost();
@@ -112,6 +112,11 @@ public class PostService {
 
         log.info("사용자 {}가 게시물 {}를 리포스트하려고 합니다.", userDetails.getUserId(), originalPostId);
 
+        if (!postRepository.existsById(originalPostId)) {
+            log.error("유효하지 않은 게시물 ID: {}", originalPostId);
+            throw  new NoSuchElementException("유효하지 않은 게시물 ID");
+        }
+
         // 기존 게시글의 repost_count 수치 증가
         countUpdater.incrementCount(originalPostId, "stat.repost_count", Post.class);
 
@@ -137,7 +142,7 @@ public class PostService {
             log.info("사용자 {}가 게시물 {}의 리포스트를 성공적으로 취소했습니다.", userDetails.getUserId(), originalPostId);
         } else {
             log.error("사용자 {}가 게시물 {}을 리포스트한 기록이 없습니다.", userDetails.getUserId(), originalPostId);
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("사용자의 리포스트 기록이 없음");
         }
     }
 
@@ -147,7 +152,7 @@ public class PostService {
 
         Post post = postRepository.findById(postId).orElseThrow(() -> {
             log.error("유효하지 않은 게시물 ID: {}", postId);
-            return new NoSuchElementException();
+            return new NoSuchElementException("유효하지 않은 게시물 ID");
         });
         if (post.getUserId().equals(userDetails.getUserId())) {
             log.info("사용자 {}가 게시물 {}를 삭제합니다.", userDetails.getUserId(), postId);
@@ -176,6 +181,11 @@ public class PostService {
 
         log.info("사용자 {}가 게시물 {}에 좋아요를 추가합니다.", userId, postId);
 
+        if (!postRepository.existsById(postId)) {
+            log.error("유효하지 않은 게시물 ID: {}", postId);
+            throw new NoSuchElementException("유효하지 않은 게시물 ID");
+        }
+
         postLikeRepository.save(new PostLike(postId, userId, new Date()));
         countUpdater.incrementCount(postId, "stat.likes_count", Post.class);
 
@@ -198,7 +208,7 @@ public class PostService {
             log.info("사용자 {}가 게시물 {}의 좋아요를 성공적으로 취소했습니다.", userId, postId);
         } else {
             log.error("사용자 {}가 게시물 {}을 좋아요한 기록이 없습니다.", userId, postId);
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("사용자의 게시물 좋아요 기록 없음");
         }
     }
 }

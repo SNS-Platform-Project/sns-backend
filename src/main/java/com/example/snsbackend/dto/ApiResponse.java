@@ -30,6 +30,11 @@ public class ApiResponse<T> {
                 .body(new ApiResponse<>(HttpStatus.NOT_FOUND, null, null));
     }
 
+    public static ResponseEntity<ApiResponse<Void>> notFound(String msg) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(HttpStatus.NOT_FOUND, msg, null));
+    }
+
     public static ResponseEntity<ApiResponse<Void>> conflict() {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ApiResponse<>(HttpStatus.CONFLICT, null, null));
