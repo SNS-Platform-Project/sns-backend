@@ -106,10 +106,12 @@ public class PostService {
 
         Post post = postRepository.findById(postId).orElseThrow(NoSuchElementException::new);
         if (post.getUserId().equals(userDetails.getUserId())) {
+            // TODO : 앞으로 게시글에 관련된 컬렉션을 추가 구현할 시 삭제도 같이 구현되어야 함.
             postRepository.delete(post);
             mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), PostLike.class);
             mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), Comment.class);
             mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), CommentLike.class);
+            mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), Repost.class);
         } else {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "해당 리소스에 대한 접근 권한이 없습니다.");
         }

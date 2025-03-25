@@ -5,28 +5,19 @@ import com.example.snsbackend.dto.ApiResponse;
 import com.example.snsbackend.dto.NoOffsetPage;
 import com.example.snsbackend.dto.PageParam;
 import com.example.snsbackend.jwt.CustomUserDetails;
-import com.example.snsbackend.model.Comment;
-import com.example.snsbackend.model.CommentLike;
-import com.example.snsbackend.model.Post;
-import com.example.snsbackend.model.PostLike;
+import com.example.snsbackend.model.*;
 import com.example.snsbackend.repository.CommentLikeRepository;
 import com.example.snsbackend.repository.CommentRepository;
 import com.example.snsbackend.repository.PostRepository;
-import com.mongodb.DuplicateKeyException;
-import com.mongodb.MongoWriteException;
+import com.example.snsbackend.repository.ReplyRepository;
 import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.UpdateResult;
 import lombok.RequiredArgsConstructor;
 import org.bson.types.ObjectId;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -41,6 +32,7 @@ import java.util.NoSuchElementException;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
+    private final ReplyRepository replyRepository;
     private final PostRepository postRepository;
     private final MongoTemplate mongoTemplate;
 
@@ -60,7 +52,7 @@ public class CommentService {
             } else {
                 //  대댓글(리플)인 경우 (부모 ID가 있음)
                 if (commentRepository.existsById(request.getParentId())) {
-                    commentRepository.save(Comment.builder()
+                    replyRepository.save(Reply.builder()
                             .postId(postId)
                             .userId(userId)
                             .parentId(request.getParentId())
@@ -73,10 +65,10 @@ public class CommentService {
                 } else {
                     throw new NoSuchElementException("부모 댓글의 ID가 유효하지 않습니다.");
                 }
-                // 부모 게시글의 댓글 개수 증가
-                mongoTemplate.updateFirst(new Query(Criteria.where("id").is(postId)),
-                        new Update().inc("stat.comments_count", 1), Post.class);
             }
+            // 부모 게시글의 댓글 개수 증가
+            mongoTemplate.updateFirst(new Query(Criteria.where("id").is(postId)),
+                    new Update().inc("stat.comments_count", 1), Post.class);
         } else {
             throw new NoSuchElementException("게시물 ID가 유효하지 않습니다.");
         }
@@ -133,7 +125,7 @@ public class CommentService {
         return new NoOffsetPage<>(comments, comments.getLast().getId(), pageParam.getSize());
     }
 
-    NoOffsetPage<Comment> getReplies(String commentId, PageParam pageParam) {
+    NoOffsetPage<Reply> getReplies(String commentId, PageParam pageParam) {
         if (!commentRepository.existsById(commentId)) {
             throw new NoSuchElementException();
         }
@@ -146,11 +138,11 @@ public class CommentService {
         query.with(Sort.by(Sort.Direction.DESC, "id"));
         query.limit(pageParam.getSize());
 
-        List<Comment> comments = mongoTemplate.find(query, Comment.class);
-        if (comments.isEmpty()) {
+        List<Reply> replies = mongoTemplate.find(query, Reply.class);
+        if (replies.isEmpty()) {
             return new NoOffsetPage<>(Collections.emptyList(), null, pageParam.getSize());
         }
 
-        return new NoOffsetPage<>(comments, comments.getLast().getId(), pageParam.getSize());
+        return new NoOffsetPage<>(replies, replies.getLast().getId(), pageParam.getSize());
     }
 }
