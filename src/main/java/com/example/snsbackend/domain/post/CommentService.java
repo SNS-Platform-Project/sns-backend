@@ -12,6 +12,7 @@ import com.example.snsbackend.repository.PostRepository;
 import com.example.snsbackend.repository.ReplyRepository;
 import com.mongodb.client.result.DeleteResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class CommentService {
     private final CommentRepository commentRepository;
@@ -38,27 +40,34 @@ public class CommentService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
+        log.info("사용자 {}가 게시물 {}에 댓글 작성을 시도합니다.", userId, postId);
+
         if (!postRepository.existsById(postId)) {
+            log.error("유효하지 않은 게시물 ID: {}", postId);
             throw new NoSuchElementException("게시물 ID가 유효하지 않습니다.");
         }
 
         if (request.getParentId() == null) {
             // 일반 댓글인 경우 (parentId가 없음)
             commentRepository.save(new Comment(postId, userId, request.getContent()));
+            log.info("사용자 {}가 게시물 {}에 댓글을 추가했습니다.", userId, postId);
         } else {
             //  대댓글(리플)인 경우 (부모 ID가 있음)
             if (isCommentValid(request.getParentId(), postId)) {
                 replyRepository.save(new Reply(postId, userId, request.getParentId(), request.getContent()));
-
+                log.info("사용자 {}가 댓글{}에 대댓글을 추가했습니다.", userId, request.getParentId());
                 // 부모 댓글의 리플 개수 증가
                 countUpdater.incrementCount(request.getParentId(), "replies_count", Comment.class);
+                log.info("댓글 {}의 리플 수가 증가했습니다.", request.getParentId());
             } else {
+                log.error("유효하지 않은 부모 댓글 ID: {}", request.getParentId());
                 throw new NoSuchElementException("입력한 부모 댓글이 유효하지 않거나 존재하지 않습니다.");
             }
 
         }
         // 부모 게시글의 댓글 개수 증가
         countUpdater.incrementCount(postId, "stat.comments_count", Post.class);
+        log.info("게시물 {}의 댓글 수가 증가했습니다.", postId);
     }
 
     boolean isCommentValid(String id, String postId) {
@@ -73,10 +82,15 @@ public class CommentService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
-        Comment comment = commentRepository.findById(commentId).orElseThrow();
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() -> {
+            log.error("유효하지 않은 댓글 ID: {}", commentId);
+            return new NoSuchElementException();
+        });
         comment.setLikesCount(comment.getLikesCount() + 1);
         commentLikeRepository.save(new CommentLike(commentId, userId, new Date(), comment.getPostId()));
         commentRepository.save(comment);
+
+        log.info("사용자 {}가 댓글 {}에 좋아요를 추가했습니다.", userId, commentId);
     }
 
     void undoLikeComment(String commentId) {
@@ -92,22 +106,30 @@ public class CommentService {
                     new Query(Criteria.where("id").is(commentId)),
                     new Update().inc("likes_count", -1),
                     Comment.class);
+            log.info("사용자 {}가 댓글 {}에 좋아요를 삭제했습니다.", userId, commentId);
         } else {
+            log.error("사용자 {}가 댓글 {}을 좋아요한 기록이 없습니다.", userId, commentId);
             throw new NoSuchElementException();
         }
     }
 
     NoOffsetPage<Comment> getComments(String postId, PageParam pageParam) {
+        log.info("사용자가 게시물 {}의 댓글을 요청합니다.", postId);
+
         if (!postRepository.existsById(postId)) {
+            log.error("유효하지 않은 게시물 ID: {}", postId);
             throw new NoSuchElementException();
         }
+
         // No offset 방식 페이징
         Query query = new Query().addCriteria(Criteria.where("post_id").is(postId));
         query.addCriteria(Criteria.where("parent_id").isNull());
+
         // object id는 생성 시간이 포함되어 있어 시간순 정렬이 가능
         // .lt() : 특정 값보다 작은 문서만 조회함
         if (pageParam.getLastId() != null) {
             query.addCriteria(Criteria.where("id").lt(new ObjectId(pageParam.getLastId())));
+            log.info("마지막 댓글 ID: {} 이후의 댓글을 조회합니다.", pageParam.getLastId());
         }
         // 최신순으로 정렬
         query.with(Sort.by(Sort.Direction.DESC, "id"));
@@ -115,13 +137,19 @@ public class CommentService {
 
         List<Comment> comments = mongoTemplate.find(query, Comment.class);
         if (comments.isEmpty()) {
+            log.info("게시물 {}에 댓글이 없습니다.", postId);
             return new NoOffsetPage<>(Collections.emptyList(), null, pageParam.getSize());
         }
+
+        log.info("게시물 {}의 댓글 {}개를 조회했습니다.", postId, comments.size());
         return new NoOffsetPage<>(comments, comments.getLast().getId(), pageParam.getSize());
     }
 
     NoOffsetPage<Reply> getReplies(String commentId, PageParam pageParam) {
+        log.info("사용자가 댓글 {}의 리플을 요청합니다.", commentId);
+
         if (!commentRepository.existsById(commentId)) {
+            log.error("유효하지 않은 댓글 ID: {}", commentId);
             throw new NoSuchElementException();
         }
 
@@ -129,15 +157,18 @@ public class CommentService {
 
         if (pageParam.getLastId() != null) {
             query.addCriteria(Criteria.where("id").lt(new ObjectId(pageParam.getLastId())));
+            log.info("마지막 댓글 ID: {} 이후의 댓글을 조회합니다.", pageParam.getLastId());
         }
         query.with(Sort.by(Sort.Direction.DESC, "id"));
         query.limit(pageParam.getSize());
 
         List<Reply> replies = mongoTemplate.find(query, Reply.class);
         if (replies.isEmpty()) {
+            log.info("댓글 {}에 리플이 없습니다.", commentId);
             return new NoOffsetPage<>(Collections.emptyList(), null, pageParam.getSize());
         }
 
+        log.info("댓글 {}의 리플 {}개를 조회했습니다.", commentId, replies.size());
         return new NoOffsetPage<>(replies, replies.getLast().getId(), pageParam.getSize());
     }
 }
