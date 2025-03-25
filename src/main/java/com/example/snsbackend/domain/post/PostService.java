@@ -32,6 +32,7 @@ public class PostService {
     private final MongoTemplate mongoTemplate;
     private final PostLikeRepository postLikeRepository;
     private final ProfileRepository profileRepository;
+    private final CountUpdater countUpdater;
 
     public PostResponse getPost(String postId) {
         Post post = postRepository.findById(postId).orElseThrow(NoSuchElementException::new);
@@ -81,7 +82,7 @@ public class PostService {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
         // 기존 게시글의 repost_count 수치 증가
-        postStatUpdate(originalPostId, "repost_count", 1);
+        countUpdater.incrementCount(originalPostId, "stat.repost_count", Post.class);
 
         repostRepository.save(new Repost(userDetails.getUserId(), originalPostId, new Date()));
     }
@@ -96,7 +97,7 @@ public class PostService {
 
         if (result.getDeletedCount() > 0) {
             // 기존 게시글의 repost_count 수치 감소
-            postStatUpdate(originalPostId, "repost_count", -1);
+            countUpdater.decrementCount(originalPostId, "stat.repost_count", Post.class);
         }
     }
 
@@ -122,7 +123,7 @@ public class PostService {
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
         postLikeRepository.save(new PostLike(postId, userId, new Date()));
-        postStatUpdate(postId, "likes_count", 1);
+        countUpdater.incrementCount(postId, "stat.likes_count", Post.class);
     }
 
     public void undoLikePost(String postId) {
@@ -135,14 +136,7 @@ public class PostService {
 
         if (result.getDeletedCount() > 0) {
             // 기존 게시글의 likes_count 수치 감소
-            postStatUpdate(postId, "likes_count", -1);
+            countUpdater.decrementCount(postId, "stat.likes_count", Post.class);
         }
-    }
-
-    private void postStatUpdate(String postId, String fieldName, Number inc) {
-        mongoTemplate.updateFirst(
-                new Query(Criteria.where("id").is(postId)),
-                new Update().inc(String.format("stat.%s", fieldName), inc),
-                Post.class);
     }
 }

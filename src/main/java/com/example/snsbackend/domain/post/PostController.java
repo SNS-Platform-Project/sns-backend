@@ -74,7 +74,7 @@ public class PostController {
             commentService.createComment(postId, request);
             return ApiResponse.success();
         } catch (NoSuchElementException e) {
-            return ApiResponse.notFound();
+            return ApiResponse.status(HttpStatus.NOT_FOUND, e.getMessage(), null);
         }
     }
 
@@ -83,7 +83,7 @@ public class PostController {
         try {
             return ApiResponse.success(commentService.getComments(postId, pageParam));
         } catch (NoSuchElementException e) {
-            return ApiResponse.status(HttpStatus.NOT_FOUND, e.getMessage(), null);
+            return ApiResponse.notFound();
         }
     }
 }

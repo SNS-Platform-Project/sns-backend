@@ -22,10 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -35,43 +32,41 @@ public class CommentService {
     private final ReplyRepository replyRepository;
     private final PostRepository postRepository;
     private final MongoTemplate mongoTemplate;
+    private final CountUpdater countUpdater;
 
     void createComment(String postId, CommentRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
-        if (postRepository.existsById(postId)) {
-            if (request.getParentId() == null) {
-                // 일반 댓글인 경우 (부모 ID가 없음)
-                commentRepository.save(Comment.builder()
-                        .postId(postId)
-                        .userId(userId)
-                        .content(request.getContent())
-                        .repliesCount(0)
-                        .createdAt(new Date()).build());
-            } else {
-                //  대댓글(리플)인 경우 (부모 ID가 있음)
-                if (commentRepository.existsById(request.getParentId())) {
-                    replyRepository.save(Reply.builder()
-                            .postId(postId)
-                            .userId(userId)
-                            .parentId(request.getParentId())
-                            .content(request.getContent())
-                            .createdAt(new Date()).build());
-
-                    // 부모 댓글의 리플 개수 증가
-                    mongoTemplate.updateFirst(new Query(Criteria.where("id").is(request.getParentId())),
-                            new Update().inc("replies_count", 1), Comment.class);
-                } else {
-                    throw new NoSuchElementException("부모 댓글의 ID가 유효하지 않습니다.");
-                }
-            }
-            // 부모 게시글의 댓글 개수 증가
-            mongoTemplate.updateFirst(new Query(Criteria.where("id").is(postId)),
-                    new Update().inc("stat.comments_count", 1), Post.class);
-        } else {
+        if (!postRepository.existsById(postId)) {
             throw new NoSuchElementException("게시물 ID가 유효하지 않습니다.");
         }
+
+        if (request.getParentId() == null) {
+            // 일반 댓글인 경우 (parentId가 없음)
+            commentRepository.save(new Comment(postId, userId, request.getContent()));
+        } else {
+            //  대댓글(리플)인 경우 (부모 ID가 있음)
+            if (isCommentValid(request.getParentId(), postId)) {
+                replyRepository.save(new Reply(postId, userId, request.getParentId(), request.getContent()));
+
+                // 부모 댓글의 리플 개수 증가
+                countUpdater.incrementCount(request.getParentId(), "replies_count", Comment.class);
+            } else {
+                throw new NoSuchElementException("입력한 부모 댓글이 유효하지 않거나 존재하지 않습니다.");
+            }
+
+        }
+        // 부모 게시글의 댓글 개수 증가
+        countUpdater.incrementCount(postId, "stat.comments_count", Post.class);
+    }
+
+    boolean isCommentValid(String id, String postId) {
+        // 요청한 postId와 부모 댓글의 postId가 일치 하는지 확인
+        return mongoTemplate.exists(new Query(Criteria
+                .where("id").is(id)
+                .and("post_id").is(postId)
+                .and("type").is("comment")), Comment.class);
     }
 
     void likeComment(String commentId) {
