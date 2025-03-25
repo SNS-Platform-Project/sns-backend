@@ -21,4 +21,7 @@ public class Stat {
 
     @Field("reactions_count")
     private int reactionsCount;  // 반응 수
+
+    @Field("shared_count")
+    private int sharedCount;    // 공유 수
 }
