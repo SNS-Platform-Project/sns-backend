@@ -1,10 +1,10 @@
 package com.example.snsbackend.domain.post;
 
 import com.example.snsbackend.dto.ApiResponse;
+import com.example.snsbackend.dto.PageParam;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +36,15 @@ public class CommentController {
             commentService.undoLikeComment(commentId);
             return ApiResponse.success();
 
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound();
+        }
+    }
+
+    @GetMapping("/{commentId}/replies")
+    public ResponseEntity<?> getReplies(@PathVariable String commentId, @ModelAttribute PageParam pageParam) {
+        try {
+            return ApiResponse.success(commentService.getReplies(commentId, pageParam));
         } catch (NoSuchElementException e) {
             return ApiResponse.notFound();
         }

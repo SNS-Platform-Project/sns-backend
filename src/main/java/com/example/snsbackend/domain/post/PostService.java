@@ -1,7 +1,6 @@
 package com.example.snsbackend.domain.post;
 
 import com.example.snsbackend.dto.PostResponse;
-import com.example.snsbackend.dto.Response;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
@@ -13,12 +12,14 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
-import java.util.Objects;
+import java.util.NoSuchElementException;
 
 @Service
 @Slf4j
@@ -33,9 +34,9 @@ public class PostService {
     private final ProfileRepository profileRepository;
 
     public PostResponse getPost(String postId) {
-        Post post = postRepository.findById(postId).orElse(null);
-        Profile profile = profileRepository.findById(Objects.requireNonNull(post).getUserId()).orElse(null);
-        User user = new User(Objects.requireNonNull(profile).getUsername(), profile.getProfilePictureUrl());
+        Post post = postRepository.findById(postId).orElseThrow(NoSuchElementException::new);
+        Profile profile = profileRepository.findById(post.getUserId()).orElseThrow(NoSuchElementException::new);
+        User user = new User(profile.getId(), profile.getUsername(), profile.getProfilePictureUrl());
 
         return new PostResponse(post, user);
     }
@@ -99,15 +100,18 @@ public class PostService {
         }
     }
 
-    public void deletePost(String postId) throws Exception {
+    public void deletePost(String postId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        Post post = postRepository.findById(postId).orElseThrow(() -> new Exception("not found"));
+        Post post = postRepository.findById(postId).orElseThrow(NoSuchElementException::new);
         if (post.getUserId().equals(userDetails.getUserId())) {
             postRepository.delete(post);
+            mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), PostLike.class);
+            mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), Comment.class);
+            mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), CommentLike.class);
         } else {
-            throw new Exception("Unauthorized");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "해당 리소스에 대한 접근 권한이 없습니다.");
         }
     }
 

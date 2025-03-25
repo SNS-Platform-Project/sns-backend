@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.NoSuchElementException;
 
@@ -19,7 +20,11 @@ public class PostController {
 
     @GetMapping("/{postId}")
     public ResponseEntity<?> getPost(@PathVariable String postId) {
-        return ApiResponse.success(postService.getPost(postId));
+        try {
+            return ApiResponse.success(postService.getPost(postId));
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound();
+        }
     }
 
     @PostMapping("/regular")
@@ -37,8 +42,15 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    public void deletePost(@PathVariable String postId) throws Exception {
-        postService.deletePost(postId);
+    public ResponseEntity<ApiResponse<Void>> deletePost(@PathVariable String postId) {
+        try {
+            postService.deletePost(postId);
+            return ApiResponse.success();
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound();
+        } catch (ResponseStatusException e) {
+            return ApiResponse.status(e.getStatusCode(), e.getReason(), null);
+        }
     }
 
     @DeleteMapping("/{originalPostId}/repost")
@@ -71,7 +83,7 @@ public class PostController {
         try {
             return ApiResponse.success(commentService.getComments(postId, pageParam));
         } catch (NoSuchElementException e) {
-            return ApiResponse.notFound();
+            return ApiResponse.status(HttpStatus.NOT_FOUND, e.getMessage(), null);
         }
     }
 }

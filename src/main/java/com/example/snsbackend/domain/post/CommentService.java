@@ -49,20 +49,36 @@ public class CommentService {
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
         if (postRepository.existsById(postId)) {
-            if (request.getParentId() != null) {
-                if (!commentRepository.existsById(request.getParentId())) {
-                    throw new NoSuchElementException();
-                }
-            }
+            if (request.getParentId() == null) {
+                // 일반 댓글인 경우 (부모 ID가 없음)
+                commentRepository.save(Comment.builder()
+                        .postId(postId)
+                        .userId(userId)
+                        .content(request.getContent())
+                        .repliesCount(0)
+                        .createdAt(new Date()).build());
+            } else {
+                //  대댓글(리플)인 경우 (부모 ID가 있음)
+                if (commentRepository.existsById(request.getParentId())) {
+                    commentRepository.save(Comment.builder()
+                            .postId(postId)
+                            .userId(userId)
+                            .parentId(request.getParentId())
+                            .content(request.getContent())
+                            .createdAt(new Date()).build());
 
-            commentRepository.save(Comment.builder()
-                    .postId(postId)
-                    .userId(userId)
-                    .parentId(request.getParentId())
-                    .content(request.getContent())
-                    .createdAt(new Date()).build());
+                    // 부모 댓글의 리플 개수 증가
+                    mongoTemplate.updateFirst(new Query(Criteria.where("id").is(request.getParentId())),
+                            new Update().inc("replies_count", 1), Comment.class);
+                } else {
+                    throw new NoSuchElementException("부모 댓글의 ID가 유효하지 않습니다.");
+                }
+                // 부모 게시글의 댓글 개수 증가
+                mongoTemplate.updateFirst(new Query(Criteria.where("id").is(postId)),
+                        new Update().inc("stat.comments_count", 1), Post.class);
+            }
         } else {
-            throw new NoSuchElementException();
+            throw new NoSuchElementException("게시물 ID가 유효하지 않습니다.");
         }
     }
 
@@ -107,6 +123,26 @@ public class CommentService {
             query.addCriteria(Criteria.where("id").lt(new ObjectId(pageParam.getLastId())));
         }
         // 최신순으로 정렬
+        query.with(Sort.by(Sort.Direction.DESC, "id"));
+        query.limit(pageParam.getSize());
+
+        List<Comment> comments = mongoTemplate.find(query, Comment.class);
+        if (comments.isEmpty()) {
+            return new NoOffsetPage<>(Collections.emptyList(), null, pageParam.getSize());
+        }
+        return new NoOffsetPage<>(comments, comments.getLast().getId(), pageParam.getSize());
+    }
+
+    NoOffsetPage<Comment> getReplies(String commentId, PageParam pageParam) {
+        if (!commentRepository.existsById(commentId)) {
+            throw new NoSuchElementException();
+        }
+
+        Query query = new Query().addCriteria(Criteria.where("parent_id").is(commentId));
+
+        if (pageParam.getLastId() != null) {
+            query.addCriteria(Criteria.where("id").lt(new ObjectId(pageParam.getLastId())));
+        }
         query.with(Sort.by(Sort.Direction.DESC, "id"));
         query.limit(pageParam.getSize());
 

@@ -28,4 +28,6 @@ public class Comment {
     private Date createdAt;
     @Field("likes_count")
     private int likesCount;
+    @Field("replies_count")
+    private Number repliesCount;
 }

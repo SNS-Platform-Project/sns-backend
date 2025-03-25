@@ -3,17 +3,18 @@ package com.example.snsbackend.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
 @Getter
 public class ApiResponse<T> {
-    private final HttpStatus status;
+    private final HttpStatusCode status;
     private final String message;
     private final T body;
 
-    private ApiResponse(HttpStatus status, String message, T body) {
+    private ApiResponse(HttpStatusCode status, String message, T body) {
         this.status = status;
-        this.message = (message != null) ? message : getDefaultMessage(status);
+        this.message = (message != null) ? message : getDefaultMessage((HttpStatus) status);
         this.body = body;
     }
     public static ResponseEntity<ApiResponse<Void>> success() {
@@ -34,7 +35,7 @@ public class ApiResponse<T> {
                 .body(new ApiResponse<>(HttpStatus.CONFLICT, null, null));
     }
 
-    public static <T> ResponseEntity<ApiResponse<T>> status(HttpStatus status, String message, T body) {
+    public static <T> ResponseEntity<ApiResponse<T>> status(HttpStatusCode status, String message, T body) {
         return ResponseEntity.status(status).body(new ApiResponse<>(status, message, body));
     }
 
