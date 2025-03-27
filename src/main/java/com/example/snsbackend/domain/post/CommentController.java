@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.NoSuchElementException;
 
@@ -47,6 +48,18 @@ public class CommentController {
             return ApiResponse.success(commentService.getReplies(commentId, pageParam));
         } catch (NoSuchElementException e) {
             return ApiResponse.notFound(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<?> deleteComment(@PathVariable String commentId) {
+        try {
+            commentService.deleteComment(commentId);
+            return ApiResponse.success();
+        } catch (NoSuchElementException e) {
+            return ApiResponse.notFound(e.getMessage());
+        } catch (ResponseStatusException e) {
+            return ApiResponse.status(e.getStatusCode(), e.getReason(), null);
         }
     }
 }

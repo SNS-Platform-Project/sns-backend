@@ -118,7 +118,7 @@ public class PostService {
         }
 
         // 기존 게시글의 repost_count 수치 증가
-        countUpdater.incrementCount(originalPostId, "stat.repost_count", Post.class);
+        countUpdater.increment(originalPostId, "stat.repost_count", Post.class);
 
         // 리포스트 저장
         repostRepository.save(new Repost(userDetails.getUserId(), originalPostId, new Date()));
@@ -138,7 +138,7 @@ public class PostService {
 
         if (result.getDeletedCount() > 0) {
             // 기존 게시글의 repost_count 수치 감소
-            countUpdater.decrementCount(originalPostId, "stat.repost_count", Post.class);
+            countUpdater.decrement(originalPostId, "stat.repost_count", Post.class);
             log.info("사용자 {}가 게시물 {}의 리포스트를 성공적으로 취소했습니다.", userDetails.getUserId(), originalPostId);
         } else {
             log.error("사용자 {}가 게시물 {}을 리포스트한 기록이 없습니다.", userDetails.getUserId(), originalPostId);
@@ -187,7 +187,7 @@ public class PostService {
         }
 
         postLikeRepository.save(new PostLike(postId, userId, new Date()));
-        countUpdater.incrementCount(postId, "stat.likes_count", Post.class);
+        countUpdater.increment(postId, "stat.likes_count", Post.class);
 
         log.info("사용자 {}가 게시물 {}에 좋아요를 성공적으로 추가했습니다.", userId, postId);
     }
@@ -204,7 +204,7 @@ public class PostService {
 
         if (result.getDeletedCount() > 0) {
             // 기존 게시글의 likes_count 수치 감소
-            countUpdater.decrementCount(postId, "stat.likes_count", Post.class);
+            countUpdater.decrement(postId, "stat.likes_count", Post.class);
             log.info("사용자 {}가 게시물 {}의 좋아요를 성공적으로 취소했습니다.", userId, postId);
         } else {
             log.error("사용자 {}가 게시물 {}을 좋아요한 기록이 없습니다.", userId, postId);

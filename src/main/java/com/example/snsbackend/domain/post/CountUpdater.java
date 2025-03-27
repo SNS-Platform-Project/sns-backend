@@ -12,13 +12,18 @@ import org.springframework.stereotype.Component;
 public class CountUpdater {
     private final MongoTemplate mongoTemplate;
 
-    public void incrementCount(String id, String fieldName, Class<?> clazz) {
+    public void increment(String id, String fieldName, Class<?> clazz) {
         mongoTemplate.updateFirst(new Query(Criteria.where("id").is(id)),
                 new Update().inc(fieldName, 1), clazz);
     }
 
-    public void decrementCount(String id, String fieldName, Class<?> clazz) {
+    public void decrement(String id, String fieldName, Class<?> clazz) {
         mongoTemplate.updateFirst(new Query(Criteria.where("id").is(id)),
                 new Update().inc(fieldName, -1), clazz);
+    }
+
+    public void update(String id, String fieldName, int inc, Class<?> clazz) {
+        mongoTemplate.updateFirst(new Query(Criteria.where("id").is(id)),
+                new Update().inc(fieldName, inc), clazz);
     }
 }

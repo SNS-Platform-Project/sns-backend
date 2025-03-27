@@ -11,28 +11,14 @@ import java.util.Date;
 @Setter
 @Getter
 @Document(collection = "comments")
-public class Comment {
-    @Id
-    private String id;
-    @Field("type")
-    @JsonIgnore
-    private String type = "comment";
-    @Field("post_id")
-    private String postId;
-    @Field("user_id")
-    private String userId;
-    @Field("content")
-    private String content;
-    @Field("created_at")
-    private Date createdAt = new Date();
-    @Field("likes_count")
-    private int likesCount = 0;
+public class Comment extends BaseComment {
     @Field("replies_count")
     private Integer repliesCount = 0;
 
     public Comment(String postId, String userId, String content) {
-        this.postId = postId;
-        this.userId = userId;
-        this.content = content;
+        this.setType("comment");
+        this.setPostId(postId);
+        this.setUserId(userId);
+        this.setContent(content);
     }
 }
