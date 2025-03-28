@@ -1,10 +1,10 @@
 package com.example.snsbackend.domain.user;
 
+import com.example.snsbackend.model.Profile;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,5 +22,11 @@ public class UserController {
     @GetMapping("/check-email")
     public boolean checkEmail(@RequestParam("email") String email){
         return userService.checkEmail(email);
+    }
+
+    // 프로필 조회
+    @GetMapping("/{user_id}/profile")
+    public Optional<Profile> getProfile(@PathVariable String user_id) {
+        return userService.getProfile(user_id);
     }
 }

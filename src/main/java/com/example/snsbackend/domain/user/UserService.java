@@ -33,4 +33,13 @@ public class UserService {
         }
         return true;
     }
+
+    // 프로필 조회
+    public Optional<Profile> getProfile(String userId) {
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new RuntimeException("Profile not found [userId: " + userId + "]");
+        }
+        return profile;
+    }
 }
