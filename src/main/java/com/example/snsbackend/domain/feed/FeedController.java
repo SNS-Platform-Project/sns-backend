@@ -20,4 +20,10 @@ public class FeedController {
     public NoOffsetPage<PostResponse> getRecentFeeds(@ModelAttribute PageParam pageParam) {
         return feedService.getRecentFeeds(pageParam);
     }
+
+    // 사용자 피드 조회
+    @GetMapping()
+    public NoOffsetPage<PostResponse> getUserFeeds(@ModelAttribute PageParam pageParam) {
+        return feedService.getUserFeeds(pageParam);
+    }
 }
