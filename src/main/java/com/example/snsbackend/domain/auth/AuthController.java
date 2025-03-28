@@ -40,6 +40,12 @@ public class AuthController {
         authService.logout(request);
     }
 
+    // 토큰 재발급
+    @PostMapping("/refresh")
+    public JwtInfo refreshToken(HttpServletRequest request) {
+        return authService.refreshToken(request);
+    }
+
     // 이메일 인증 요청
     @PostMapping("/email/verify-request")
     public ResponseEntity<?> sendAuthCodeEmail(@RequestBody @Valid EmailRequest request) {

@@ -165,6 +165,29 @@ public class AuthService {
         log.info("Expired token has been removed");
     }
 
+    // 토큰 재발급
+    public JwtInfo refreshToken(HttpServletRequest request) {
+        //String refreshToken = request.getHeader("refresh_token");
+        String refreshToken = TokenUtils.extractAccessTokenFromHeader(request);
+
+        // Refresh Token 검증
+        if (!jwtProvider.validateRefreshToken(refreshToken)) {
+            log.debug("Invalid refresh token. [refresh_token: {}]", refreshToken);
+            return null;
+        }
+
+        // Refresh Token으로부터 사용자 정보 추출
+        String userId = jwtProvider.getIdFromRefreshToken(refreshToken);
+        if (userId == null || userId.isEmpty()) {
+            log.debug("Failed to extract user information from token [refresh_token: {}]",  refreshToken);
+            return null;
+        }
+
+        // JWT 토큰 생성 후 Refresh Token 저장
+        log.info("refresh successfully [userid: " + userId + "]");
+        return saveRefreshToken(userId);
+    }
+
     @Transactional
     // 인증번호 생성 후 이메일 전송
     public ResponseEntity<?> sendCodeToEmail(EmailRequest email) {
