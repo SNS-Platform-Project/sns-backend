@@ -12,36 +12,38 @@ public class ApiResponse<T> {
     private final String message;
     private final T body;
 
-    private ApiResponse(HttpStatusCode status, String message, T body) {
+    public ApiResponse(HttpStatusCode status, String message, T body) {
         this.status = status;
         this.message = (message != null) ? message : getDefaultMessage((HttpStatus) status);
         this.body = body;
     }
     public static ResponseEntity<ApiResponse<Void>> success() {
-        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK, null, null));
+        return createResponseEntity(HttpStatus.OK, null, null);
     }
 
     public static <T> ResponseEntity<ApiResponse<T>> success(T body) {
-        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK, null, body));
+        return createResponseEntity(HttpStatus.OK, null, body);
     }
 
     public static ResponseEntity<ApiResponse<Void>> notFound() {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiResponse<>(HttpStatus.NOT_FOUND, null, null));
+        return createResponseEntity(HttpStatus.NOT_FOUND, null, null);
     }
 
     public static ResponseEntity<ApiResponse<Void>> notFound(String msg) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiResponse<>(HttpStatus.NOT_FOUND, msg, null));
+        return createResponseEntity(HttpStatus.NOT_FOUND, msg, null);
     }
 
     public static ResponseEntity<ApiResponse<Void>> conflict() {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ApiResponse<>(HttpStatus.CONFLICT, null, null));
+        return createResponseEntity(HttpStatus.CONFLICT, null, null);
     }
 
-    public static <T> ResponseEntity<ApiResponse<T>> status(HttpStatusCode status, String message, T body) {
-        return ResponseEntity.status(status).body(new ApiResponse<>(status, message, body));
+    public static <T> ResponseEntity<ApiResponse<T>> status(HttpStatusCode status, String message) {
+        return ResponseEntity.status(status).body(new ApiResponse<>(status, message, null));
+    }
+
+    private static <T> ResponseEntity<ApiResponse<T>> createResponseEntity(HttpStatus status, String message, T body) {
+        return ResponseEntity.status(status)
+                .body(new ApiResponse<>(status, message, body));
     }
 
     private static String getDefaultMessage(HttpStatus status) {

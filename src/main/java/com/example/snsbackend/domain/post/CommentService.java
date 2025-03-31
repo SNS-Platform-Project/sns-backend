@@ -1,7 +1,6 @@
 package com.example.snsbackend.domain.post;
 
 import com.example.snsbackend.dto.CommentRequest;
-import com.example.snsbackend.dto.ApiResponse;
 import com.example.snsbackend.dto.NoOffsetPage;
 import com.example.snsbackend.dto.PageParam;
 import com.example.snsbackend.jwt.CustomUserDetails;
@@ -43,7 +42,7 @@ public class CommentService {
         log.info("사용자 {}가 게시물 {}에 댓글 작성을 시도합니다.", userId, postId);
 
         if (!postRepository.existsById(postId)) {
-            log.error("유효하지 않은 게시물 ID: {}", postId);
+            log.warn("유효하지 않은 게시물 ID: {}", postId);
             throw new NoSuchElementException("게시물 ID가 유효하지 않습니다.");
         }
 
@@ -60,7 +59,7 @@ public class CommentService {
                 countUpdater.increment(request.getParentId(), "replies_count", Comment.class);
                 log.info("댓글 {}의 리플 수가 증가했습니다.", request.getParentId());
             } else {
-                log.error("유효하지 않은 부모 댓글 ID: {}", request.getParentId());
+                log.warn("유효하지 않은 부모 댓글 ID: {}", request.getParentId());
                 throw new NoSuchElementException("입력한 부모 댓글이 유효하지 않거나 존재하지 않습니다.");
             }
 
@@ -83,7 +82,7 @@ public class CommentService {
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
         BaseComment comment = baseCommentRepository.findById(commentId).orElseThrow(() -> {
-            log.error("유효하지 않은 댓글 ID: {}", commentId);
+            log.warn("유효하지 않은 댓글 ID: {}", commentId);
             return new NoSuchElementException("유효하지 않은 댓글 ID");
         });
         comment.setLikesCount(comment.getLikesCount() + 1);
@@ -108,7 +107,7 @@ public class CommentService {
                     BaseComment.class);
             log.info("사용자 {}가 댓글 {}에 좋아요를 삭제했습니다.", userId, commentId);
         } else {
-            log.error("사용자 {}가 댓글 {}을 좋아요한 기록이 없습니다.", userId, commentId);
+            log.warn("사용자 {}가 댓글 {}을 좋아요한 기록이 없습니다.", userId, commentId);
             throw new NoSuchElementException("사용자의 댓글 좋아요 기록이 없음");
         }
     }
@@ -117,7 +116,7 @@ public class CommentService {
         log.info("사용자가 게시물 {}의 댓글을 요청합니다.", postId);
 
         if (!postRepository.existsById(postId)) {
-            log.error("유효하지 않은 게시물 ID: {}", postId);
+            log.warn("유효하지 않은 게시물 ID: {}", postId);
             throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
 
@@ -149,7 +148,7 @@ public class CommentService {
         log.info("사용자가 댓글 {}의 리플을 요청합니다.", commentId);
 
         if (!commentRepository.existsById(commentId)) {
-            log.error("유효하지 않은 댓글 ID: {}", commentId);
+            log.warn("유효하지 않은 댓글 ID: {}", commentId);
             throw new NoSuchElementException("유효하지 않은 댓글 ID");
         }
 
@@ -179,12 +178,12 @@ public class CommentService {
         log.info("사용자 {}가 댓글 {}을 삭제합니다.", userId, commentId);
 
         BaseComment comment = baseCommentRepository.findById(commentId).orElseThrow(() -> {
-            log.error("유효하지 않은 댓글 ID: {}", commentId);
+            log.warn("유효하지 않은 댓글 ID: {}", commentId);
             return new NoSuchElementException("유효하지 않은 댓글 ID");
         });
 
         if (!comment.getUserId().equals(userId)) {
-            log.error("사용자 {}가 댓글 {}에 대한 접근 권한이 없습니다.", userId, commentId);
+            log.warn("사용자 {}가 댓글 {}에 대한 접근 권한이 없습니다.", userId, commentId);
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 리소스에 대한 접근 권한이 없습니다.");
         }
 

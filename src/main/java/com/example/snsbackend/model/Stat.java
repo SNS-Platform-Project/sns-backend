@@ -24,4 +24,7 @@ public class Stat {
 
     @Field("shared_count")
     private int sharedCount;    // 공유 수
+
+    @Field("clicks_count")
+    private int clicksCount;
 }
