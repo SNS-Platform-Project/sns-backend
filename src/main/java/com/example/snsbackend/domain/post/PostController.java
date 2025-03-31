@@ -1,13 +1,12 @@
 package com.example.snsbackend.domain.post;
 
 import com.example.snsbackend.dto.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.NoSuchElementException;
 
 @Slf4j
 @RestController
@@ -23,7 +22,7 @@ public class PostController {
     }
 
     @PostMapping("/regular")
-    public ResponseEntity<ApiResponse<Void>> createPost(@RequestBody PostRequest content) {
+    public ResponseEntity<ApiResponse<Void>> createPost(@Valid @RequestBody PostRequest content) {
         postService.createPost(content);
         return ApiResponse.success();
     }
@@ -76,6 +75,11 @@ public class PostController {
     @GetMapping("/{postId}/comments")
     public ResponseEntity<?> getComments(@PathVariable String postId, @ModelAttribute PageParam pageParam) {
         return ApiResponse.success(commentService.getComments(postId, pageParam));
+    }
+
+    @DeleteMapping("/images")
+    public ResponseEntity<?> deleteImage(@Valid @RequestBody ImageRequest request) throws Exception {
+        return ApiResponse.success(postService.deleteImage(request));
     }
 }
 

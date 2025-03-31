@@ -1,5 +1,9 @@
 package com.example.snsbackend.domain.post;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.api.ApiResponse;
+import com.cloudinary.utils.ObjectUtils;
+import com.example.snsbackend.dto.ImageRequest;
 import com.example.snsbackend.dto.PostResponse;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
@@ -8,18 +12,17 @@ import com.example.snsbackend.repository.*;
 import com.mongodb.client.result.DeleteResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Date;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -163,5 +166,34 @@ public class PostService {
             log.warn("사용자 {}가 게시물 {}을 좋아요한 기록이 없습니다.", userId, postId);
             throw new NoSuchElementException("사용자의 게시물 좋아요 기록 없음");
         }
+    }
+
+    @Value("${CLOUDINARY_URL}")
+    private String CLOUDINARY_URL;
+
+    public List<Map<String, String>> deleteImage(ImageRequest request) throws Exception {
+        Cloudinary cloudinary = new Cloudinary(CLOUDINARY_URL);
+
+        ApiResponse results = cloudinary.api().deleteResources(request.getPublicIds(), ObjectUtils.emptyMap());
+        log.info("cloudinary api result: {}", results.get("deleted"));
+        Object deletedObj = results.get("deleted");
+        if (deletedObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, String> deletedMap = (Map<String, String>) deletedObj;
+
+            // 삭제된 항목 중 실패한 항목만 리스트에 추가
+            List<Map<String, String>> failResources = new ArrayList<>();
+            deletedMap.forEach((publicId, result) -> {
+                if (!"deleted".equals(result)) {
+                    failResources.add(Map.of(publicId, result));
+                }
+            });
+            // 실패한 항목이 없으면 null 반환
+            if (failResources.isEmpty()) {
+                return null;
+            }
+            return failResources;
+        }
+        return null;
     }
 }

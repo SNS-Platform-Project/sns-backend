@@ -1,5 +1,6 @@
 package com.example.snsbackend.dto;
 
+import com.example.snsbackend.domain.post.NoBlackInList;
 import com.example.snsbackend.model.Image;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,7 +15,9 @@ public class PostRequest {
     @NotNull
     @Size(min = 1, max = 300, message = "Content must be between 1 and 300 characters")
     private String content;
+    @NoBlackInList
     private List<String> hashtags;
+    @NoBlackInList
     private List<String> mentions;
     private List<Image> images;
 }
