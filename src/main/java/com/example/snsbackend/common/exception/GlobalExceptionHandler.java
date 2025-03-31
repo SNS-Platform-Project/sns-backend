@@ -1,4 +1,4 @@
-package com.example.snsbackend.config;
+package com.example.snsbackend.common.exception;
 
 import com.example.snsbackend.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
