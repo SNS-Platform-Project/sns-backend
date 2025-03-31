@@ -25,7 +25,6 @@ import java.util.NoSuchElementException;
 @Slf4j
 @RequiredArgsConstructor
 public class PostService {
-    private final RegularPostRepository regularPostRepository;
     private final QuotePostRepository quotePostRepository;
     private final RepostRepository repostRepository;
     private final PostRepository postRepository;
@@ -52,42 +51,29 @@ public class PostService {
 
     public void createPost(PostRequest content) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
-        RegularPost newPost = new RegularPost();
-        newPost.setType("post");
-        newPost.setContent(content.getContent());
-        newPost.setHashtags(content.getHashtags());
-        newPost.setMentions(content.getMentions());
-        newPost.setImages(content.getImages());
-        newPost.setCreatedAt(new Date());
-        newPost.setUserId(userDetails.getUserId());
-        newPost.setStat(new Stat());
+        Post post = new Post(content);
+        post.setUserId(userId);
 
-        regularPostRepository.save(newPost);
+        postRepository.save(post);
     }
 
     public void createQuote(String originalPostId, PostRequest content) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
         if (!postRepository.existsById(originalPostId)) {
             log.warn("유효하지 않은 게시물 ID: {}", originalPostId);
             throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
 
-        QuotePost newPost = new QuotePost();
-        newPost.setType("quote");
-        newPost.setContent(content.getContent());
-        newPost.setHashtags(content.getHashtags());
-        newPost.setMentions(content.getMentions());
-        newPost.setImages(content.getImages());
-        newPost.setCreatedAt(new Date());
-        newPost.setOriginal_post_id(originalPostId);
-        newPost.setUserId(userDetails.getUserId());
-        newPost.setStat(new Stat());
+        QuotePost post = new QuotePost(content);
+        post.setUserId(userId);
+        post.setOriginal_post_id(originalPostId);
+        post.setType("quote");
 
-        quotePostRepository.save(newPost);
+        quotePostRepository.save(post);
     }
 
     public void createRepost(String originalPostId) {

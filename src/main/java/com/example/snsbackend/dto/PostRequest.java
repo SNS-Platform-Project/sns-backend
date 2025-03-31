@@ -1,6 +1,6 @@
 package com.example.snsbackend.dto;
 
-import jakarta.validation.Valid;
+import com.example.snsbackend.model.Image;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -16,5 +16,5 @@ public class PostRequest {
     private String content;
     private List<String> hashtags;
     private List<String> mentions;
-    private List<String> images;
+    private List<Image> images;
 }
