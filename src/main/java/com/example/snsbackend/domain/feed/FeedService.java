@@ -18,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -39,13 +40,13 @@ public class FeedService {
 
         // 사용자가 팔로우 중인 사람들 추출
         Following following = followingRepository.findByUserId(userId);
-        if (following == null) {
-            log.info("팔로우 중인 사람이 없습니다.");
-            return new NoOffsetPage<>(Collections.emptyList(), null, pageParam.getSize());
+        List<String> follow = new ArrayList<>();
+        if (following != null) {
+            follow = following.getFollowings().stream().map(Follow::getFollowId).collect(Collectors.toList());
         }
-        List<String> follow = following.getFollowings().stream().map(Follow::getFollowId).toList();
+        follow.add(userId); // 사용자도 목록에 추가
 
-        // 게시물 필터링 (팔로우 중인 사람들의 게시물)
+        // 게시물 필터링 (팔로우 중인 사람들의 게시물, 사용자가 작성한 게시물)
         Query query = new Query().addCriteria(Criteria.where("user_id").in(follow));
 
         // object id는 생성 시간이 포함되어 있어 시간순 정렬이 가능
@@ -61,7 +62,7 @@ public class FeedService {
 
         List<Post> posts = mongoTemplate.find(query, Post.class);
         if (posts.isEmpty()) {
-            log.info("팔로잉한 사람들 중 게시물을 작성한 사람이 없습니다.");
+            log.info("게시물이 없습니다.");
             return new NoOffsetPage<>(Collections.emptyList(), null, pageParam.getSize());
         }
 
