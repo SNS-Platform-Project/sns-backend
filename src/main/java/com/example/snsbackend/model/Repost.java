@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Document(collection = "reposts")
@@ -22,5 +23,5 @@ public class Repost {
     @Field("post_id")
     private String postId;     // 원본 트윗 ID
     @Field("created_at")
-    private Date createdAt;
+    private LocalDateTime createdAt;
 }

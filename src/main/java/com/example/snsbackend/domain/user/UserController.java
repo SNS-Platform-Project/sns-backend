@@ -24,9 +24,15 @@ public class UserController {
         return userService.checkEmail(email);
     }
 
-    // 프로필 조회
+    // 프로필 조회 (user_id 사용)
     @GetMapping("/{user_id}/profile")
     public Optional<Profile> getProfile(@PathVariable String user_id) {
         return userService.getProfile(user_id);
+    }
+
+    // 프로필 조회 (token 사용)
+    @GetMapping("/profile")
+    public Optional<Profile> getMyProfile() {
+        return userService.getMyProfile();
     }
 }

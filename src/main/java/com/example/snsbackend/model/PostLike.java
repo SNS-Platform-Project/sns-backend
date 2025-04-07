@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Getter
@@ -22,5 +23,5 @@ public class PostLike {
     private String userId;
 
     @Field("created_at")
-    private Date createdAt;
+    private LocalDateTime createdAt;
 }

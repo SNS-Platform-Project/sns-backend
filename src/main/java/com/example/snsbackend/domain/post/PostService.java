@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.NoSuchElementException;
 
@@ -49,7 +50,7 @@ public class PostService {
 
         User user = new User(profile.getId(), profile.getUsername(), profile.getProfilePictureUrl());
 
-        return new PostResponse(post, user);
+        return new PostResponse(post, user, null);
     }
 
     public void createPost(PostRequest content) {
@@ -64,7 +65,7 @@ public class PostService {
         newPost.setHashtags(content.getHashtags());
         newPost.setMentions(content.getMentions());
         newPost.setImages(content.getImages());
-        newPost.setCreatedAt(new Date());
+        newPost.setCreatedAt(LocalDateTime.now());
         newPost.setUserId(userDetails.getUserId());
         newPost.setStat(new Stat());
 
@@ -93,7 +94,7 @@ public class PostService {
         newPost.setHashtags(content.getHashtags());
         newPost.setMentions(content.getMentions());
         newPost.setImages(content.getImages());
-        newPost.setCreatedAt(new Date());
+        newPost.setCreatedAt(LocalDateTime.now());
         newPost.setOriginal_post_id(originalPostId);
         newPost.setUserId(userDetails.getUserId());
         newPost.setStat(new Stat());
@@ -121,7 +122,7 @@ public class PostService {
         countUpdater.increment(originalPostId, "stat.repost_count", Post.class);
 
         // 리포스트 저장
-        repostRepository.save(new Repost(userDetails.getUserId(), originalPostId, new Date()));
+        repostRepository.save(new Repost(userDetails.getUserId(), originalPostId, LocalDateTime.now()));
 
         log.info("사용자 {}가 게시물 {}를 성공적으로 리포스트했습니다.", userDetails.getUserId(), originalPostId);
     }
@@ -186,7 +187,7 @@ public class PostService {
             throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
 
-        postLikeRepository.save(new PostLike(postId, userId, new Date()));
+        postLikeRepository.save(new PostLike(postId, userId, LocalDateTime.now()));
         countUpdater.increment(postId, "stat.likes_count", Post.class);
 
         log.info("사용자 {}가 게시물 {}에 좋아요를 성공적으로 추가했습니다.", userId, postId);

@@ -18,10 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -38,16 +35,16 @@ public class FeedService {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String userId = customUserDetails.getUserId();
 
-        // 사용자가 팔로우 중인 사람들 추출
+        // 팔로우 중인 사용자 + 자기 자신
         Following following = followingRepository.findByUserId(userId);
         List<String> follow = new ArrayList<>();
         if (following != null) {
             follow = following.getFollowings().stream().map(Follow::getFollowId).collect(Collectors.toList());
         }
-        follow.add(userId); // 사용자도 목록에 추가
+        follow.add(userId);
 
-        // 게시물 필터링 (팔로우 중인 사람들의 게시물, 사용자가 작성한 게시물)
-        Query query = new Query().addCriteria(Criteria.where("user_id").in(follow));
+        // 쿼리
+        Query query = new Query(Criteria.where("user_id").in(follow));
 
         // object id는 생성 시간이 포함되어 있어 시간순 정렬이 가능
         // .lt() : 특정 값보다 작은 문서만 조회함
@@ -60,23 +57,47 @@ public class FeedService {
         query.with(Sort.by(Sort.Direction.DESC, "id"));
         query.limit(pageParam.getSize());
 
+        // 최신순 게시글
         List<Post> posts = mongoTemplate.find(query, Post.class);
-        if (posts.isEmpty()) {
-            log.info("게시물이 없습니다.");
-            return new NoOffsetPage<>(Collections.emptyList(), null, pageParam.getSize());
-        }
 
-        // PostResponse 정의
-        List<PostResponse> postResponse = posts.stream().map(post -> {
-            Optional<Profile> profile = profileRepository.findById(post.getUserId());
-            if (profile.isEmpty()) {
-                throw new RuntimeException("Profile not found [userId: " + userId + "]");
+        // 최신순 리포스트
+        List<Repost> reposts = mongoTemplate.find(query, Repost.class);
+
+        // 하나의 타임라인으로 병합
+        List<Timeline> timeline = new ArrayList<>();
+        posts.forEach(post -> timeline.add(new Timeline(post.getCreatedAt(), post, null)));
+        reposts.forEach(repost -> {
+            Post originalPost = mongoTemplate.findById(repost.getPostId(), Post.class);
+            if (originalPost != null) {
+                timeline.add(new Timeline(repost.getCreatedAt(), originalPost, repost.getUserId()));
             }
+        });
+
+        // 최신순 정렬
+        timeline.sort(Comparator.comparing(Timeline::getCreatedAt).reversed());
+
+        // 페이징
+        List<Timeline> pagedTimeline = timeline.stream().limit(pageParam.getSize()).collect(Collectors.toList());
+
+        List<PostResponse> responses = pagedTimeline.stream().map(item -> {
+            Optional<Profile> profile = profileRepository.findById(item.getPost().getUserId());
+            if (profile.isEmpty()) throw new RuntimeException("Profile not found");
+
             User user = new User(profile.get().getId(), profile.get().getUsername(), profile.get().getProfilePictureUrl());
-            return new PostResponse(post, user);
+
+            User repostedBy = null;
+            if (item.getRepostedByUserId() != null) {
+                Optional<Profile> reProfile = profileRepository.findById(item.getRepostedByUserId());
+                if (reProfile.isPresent()) {
+                    repostedBy = new User(reProfile.get().getId(), reProfile.get().getUsername(), reProfile.get().getProfilePictureUrl());
+                }
+            }
+
+            return new PostResponse(item.getPost(), user, repostedBy);
         }).collect(Collectors.toList());
 
-        return new NoOffsetPage<>(postResponse, postResponse.getLast().getPost().getId(), pageParam.getSize());
+        String lastId = responses.isEmpty() ? null : responses.get(responses.size() - 1).getPost().getId();
+        return new NoOffsetPage<>(responses, lastId, pageParam.getSize());
     }
 
     // 사용자 피드 조회
@@ -85,7 +106,7 @@ public class FeedService {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String userId = customUserDetails.getUserId();
 
-        // 게시물 필터링 (팔로우 중인 사람들의 게시물)
+        // 쿼리
         Query query = new Query().addCriteria(Criteria.where("user_id").is(userId));
 
         // object id는 생성 시간이 포함되어 있어 시간순 정렬이 가능
@@ -99,22 +120,46 @@ public class FeedService {
         query.with(Sort.by(Sort.Direction.DESC, "id"));
         query.limit(pageParam.getSize());
 
+        // 최신순 게시글
         List<Post> posts = mongoTemplate.find(query, Post.class);
-        if (posts.isEmpty()) {
-            log.info("작성한 게시물이 없습니다. [userId: {}]", userId);
-            return new NoOffsetPage<>(Collections.emptyList(), null, pageParam.getSize());
-        }
 
-        // PostResponse 정의
-        List<PostResponse> postResponse = posts.stream().map(post -> {
-            Optional<Profile> profile = profileRepository.findById(post.getUserId());
-            if (profile.isEmpty()) {
-                throw new RuntimeException("Profile not found [userId: " + userId + "]");
+        // 최신순 리포스트
+        List<Repost> reposts = mongoTemplate.find(query, Repost.class);
+
+        // 하나의 타임라인으로 병합
+        List<Timeline> timeline = new ArrayList<>();
+        posts.forEach(post -> timeline.add(new Timeline(post.getCreatedAt(), post, null)));
+        reposts.forEach(repost -> {
+            Post originalPost = mongoTemplate.findById(repost.getPostId(), Post.class);
+            if (originalPost != null) {
+                timeline.add(new Timeline(repost.getCreatedAt(), originalPost, repost.getUserId()));
             }
-            User user = new User(userId, profile.get().getUsername(), profile.get().getProfilePictureUrl());
-            return new PostResponse(post, user);
+        });
+
+        // 최신순 정렬
+        timeline.sort(Comparator.comparing(Timeline::getCreatedAt).reversed());
+
+        // 페이징
+        List<Timeline> pagedTimeline = timeline.stream().limit(pageParam.getSize()).collect(Collectors.toList());
+
+        List<PostResponse> responses = pagedTimeline.stream().map(item -> {
+            Optional<Profile> profile = profileRepository.findById(item.getPost().getUserId());
+            if (profile.isEmpty()) throw new RuntimeException("Profile not found");
+
+            User user = new User(profile.get().getId(), profile.get().getUsername(), profile.get().getProfilePictureUrl());
+
+            User repostedBy = null;
+            if (item.getRepostedByUserId() != null) {
+                Optional<Profile> reProfile = profileRepository.findById(item.getRepostedByUserId());
+                if (reProfile.isPresent()) {
+                    repostedBy = new User(reProfile.get().getId(), reProfile.get().getUsername(), reProfile.get().getProfilePictureUrl());
+                }
+            }
+
+            return new PostResponse(item.getPost(), user, repostedBy);
         }).collect(Collectors.toList());
 
-        return new NoOffsetPage<>(postResponse, postResponse.getLast().getPost().getId(), pageParam.getSize());
+        String lastId = responses.isEmpty() ? null : responses.get(responses.size() - 1).getPost().getId();
+        return new NoOffsetPage<>(responses, lastId, pageParam.getSize());
     }
 }

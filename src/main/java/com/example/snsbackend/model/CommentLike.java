@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @Document("comment_likes")
@@ -12,6 +12,6 @@ import java.util.Date;
 public class CommentLike {
     private String commentId;
     private String userId;
-    private Date createdAt;
+    private LocalDateTime createdAt;
     private String postId;
 }
