@@ -1,9 +1,8 @@
 package com.example.snsbackend.dto;
 
-import com.example.snsbackend.domain.post.NoBlackInList;
+import com.example.snsbackend.common.validation.NoBlackInList;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.Getter;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package com.example.snsbackend.dto;
 
-import com.example.snsbackend.domain.post.NoBlackInList;
+import com.example.snsbackend.common.validation.NoBlackInList;
 import com.example.snsbackend.model.Image;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/users/check-email").permitAll()
                         .requestMatchers("/api/v1/auth/reset-password").permitAll()
                         .requestMatchers("/api/v1/auth/refresh").permitAll()
+                        .requestMatchers("/portfolio").permitAll()
                         .anyRequest().authenticated())
 
                 // JWT 검증 및 인증 정보 설정를 설정하는 필터 추가, UsernamePasswordAuthenticationFilter보다 이 필터를 먼저 적용하도록 설정

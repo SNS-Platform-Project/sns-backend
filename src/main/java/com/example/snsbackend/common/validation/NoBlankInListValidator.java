@@ -1,4 +1,4 @@
-package com.example.snsbackend.domain.post;
+package com.example.snsbackend.common.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;

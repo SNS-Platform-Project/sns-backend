@@ -105,7 +105,7 @@ public class JwtProvider {
     }
 
     // 토큰에서 claim 추출
-    private Claims parseToken (String token) {
+    public Claims parseToken (String token) {
         try {
             return Jwts.parser()
                     .verifyWith(key)
