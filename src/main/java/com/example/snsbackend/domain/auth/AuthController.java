@@ -1,9 +1,6 @@
 package com.example.snsbackend.domain.auth;
 
-import com.example.snsbackend.dto.AuthCodeRequest;
-import com.example.snsbackend.dto.EmailRequest;
-import com.example.snsbackend.dto.LoginRequest;
-import com.example.snsbackend.dto.RegisterRequest;
+import com.example.snsbackend.dto.*;
 import com.example.snsbackend.jwt.JwtInfo;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -24,14 +21,14 @@ public class AuthController {
 
     // 회원 가입
     @PostMapping("/register")
-    public JwtInfo register(@RequestBody @Valid RegisterRequest request) {
-        return authService.register(request);
+    public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
+        return ApiResponse.success(authService.register(request));
     }
 
     // 로그인
     @PostMapping("/login")
-    public JwtInfo login(@RequestBody @Valid LoginRequest request) {
-        return authService.login(request);
+    public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
+        return ApiResponse.success(authService.login(request));
     }
 
     // 로그아웃

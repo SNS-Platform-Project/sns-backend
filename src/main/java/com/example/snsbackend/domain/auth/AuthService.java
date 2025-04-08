@@ -4,6 +4,8 @@ import com.example.snsbackend.dto.AuthCodeRequest;
 import com.example.snsbackend.dto.EmailRequest;
 import com.example.snsbackend.dto.LoginRequest;
 import com.example.snsbackend.dto.RegisterRequest;
+import com.example.snsbackend.exception.ApiErrorType;
+import com.example.snsbackend.exception.ApiException;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.jwt.JwtInfo;
 import com.example.snsbackend.jwt.JwtProvider;
@@ -79,30 +81,30 @@ public class AuthService {
     // 회원 가입
     public JwtInfo register(RegisterRequest request) {
         if (!EMAIL_PATTERN.matcher(request.getEmail()).matches()) {
-            throw new RuntimeException("Invalid email format. [email: " + request.getEmail() + "]");
+            throw new ApiException(ApiErrorType.INVALID_EMAIL, "email: " + request.getEmail());
         }
 
         Optional<Profile> email = profileRepository.findByEmail(request.getEmail());
         if (email.isPresent()) {
-            throw new RuntimeException("This email already exists. [email: " + request.getEmail() + "]");
+            throw new ApiException(ApiErrorType.CONFLICT, "email: " + request.getEmail(), "이미 가입된 이메일입니다.");
         }
 
         if (!USERNAME_PATTERN.matcher(request.getUsername()).matches()) {
-            throw new RuntimeException("Invalid username format. [username: " + request.getUsername() + "]");
+            throw new ApiException(ApiErrorType.INVALID_USERNAME, "username: " + request.getUsername());
         }
 
         Optional<Profile> username = profileRepository.findByUsername(request.getUsername());
         if (username.isPresent()) {
-            throw new RuntimeException("This username already exists. [username: " + request.getUsername() + "]");
+            throw new ApiException(ApiErrorType.CONFLICT, "username: " + request.getUsername(), "이미 사용 중인 아이디입니다.");
         }
 
         Optional<AuthCode> authCode = authCodeRepository.findByEmail(request.getEmail());
         authCode.ifPresentOrElse(code -> {
             if (!code.isEmailVerified()) {
-                throw new RuntimeException("This email is not verified. [email: " + request.getEmail() + "]");
+                throw new ApiException(ApiErrorType.NOT_VERIFIED_EMAIL, "email: " + request.getEmail());
             }
         }, () -> {
-            throw new RuntimeException("No Auth Code found. [email: " + request.getEmail() + "]");
+            throw new ApiException(ApiErrorType.NOT_FOUND, "email: " + request.getEmail(), "해당 이메일에 대한 인증 번호가 존재하지 않습니다.");
         });
 
         // 사용자 정보 저장
@@ -120,20 +122,24 @@ public class AuthService {
 
     // 로그인
     public JwtInfo login(LoginRequest request) {
-        // AuthenticationManager은 AuthenticationProvider들을 순회하며 UserDetailsService를 호출한다.
-        // 이때 CustomUserDetailsService를 새로 Service에 등록했기 때문에 커스텀된 구현체가 인식되며,
-        // overriding 된 loadUserByUsername 함수가 호출된다.
-        // UserDetails에 있는 사용자 비밀번호와 입력된 비밀번호를 비교하여 인증에 성공하면 Authentication 객체가 반환됨
+        try {
+            // AuthenticationManager은 AuthenticationProvider들을 순회하며 UserDetailsService를 호출한다.
+            // 이때 CustomUserDetailsService를 새로 Service에 등록했기 때문에 커스텀된 구현체가 인식되며,
+            // overriding 된 loadUserByUsername 함수가 호출된다.
+            // UserDetails에 있는 사용자 비밀번호와 입력된 비밀번호를 비교하여 인증에 성공하면 Authentication 객체가 반환됨
 
-        Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword())
-        );
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            Authentication authentication = authenticationManagerBuilder.getObject().authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword())
+            );
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
 
-        log.info("login successfully [userID: {}]", userDetails.getUserId());
+            log.info("login successfully [userID: {}]", userDetails.getUserId());
 
-        // JWT 토큰 생성 후 Refresh Token 저장
-        return saveRefreshToken(userDetails.getUserId());
+            // JWT 토큰 생성 후 Refresh Token 저장
+            return saveRefreshToken(userDetails.getUserId());
+        } catch (Exception e) {
+            throw new ApiException(ApiErrorType.LOGIN_FAILED);
+        }
     }
 
     // 로그아웃
