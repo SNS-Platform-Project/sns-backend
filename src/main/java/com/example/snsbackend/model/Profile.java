@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -26,7 +27,13 @@ public class Profile {
     private String bio;
 
     @Field("profile_picture_url")
-    private String profilePictureUrl;
+    private Image profilePictureUrl;
+
+    @Field("birthday")
+    private LocalDate birthday;
+
+    @Field("is_public")
+    private boolean isPublic;
 
     @Field(name = "created_at")
     private LocalDateTime createdAt;

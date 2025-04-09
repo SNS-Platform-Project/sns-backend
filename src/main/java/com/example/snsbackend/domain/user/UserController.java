@@ -53,4 +53,11 @@ public class UserController {
         userService.setBio(request);
         return ApiResponse.success();
     }
+
+    // 계정 공개 여부 설정
+    @PatchMapping("/profile/public")
+    public ResponseEntity<?> setPrivacy() {
+        userService.setPublic();
+        return ApiResponse.success();
+    }
 }

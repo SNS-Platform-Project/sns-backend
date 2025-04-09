@@ -13,5 +13,5 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public class User {
     private String userId;
     private String username;
-    private String profilePictureUrl;
+    private Image profilePictureUrl;
 }

@@ -107,4 +107,19 @@ public class UserService {
         profile.get().setBio(request.getNewData());
         profileRepository.save(profile.get());
     }
+
+    // 계정 공개 여부 설정
+    public void setPublic() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
+        }
+
+        profile.get().setPublic(!profile.get().isPublic());
+        profileRepository.save(profile.get());
+    }
 }
