@@ -68,4 +68,11 @@ public class UserController {
         userService.setBirthday(request);
         return ApiResponse.success();
     }
+
+    // 프로필 외부 링크 설정
+    @PatchMapping("/profile/link")
+    public ResponseEntity<?> setLink(@RequestBody @Valid NewDataRequest request) {
+        userService.setSocialLinks(request);
+        return ApiResponse.success();
+    }
 }

@@ -138,4 +138,19 @@ public class UserService {
         profile.get().setBirthday(request.getBirthday());
         profileRepository.save(profile.get());
     }
+
+    // 프로필 외부 링크 설정
+    public void setSocialLinks(NewDataRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
+        }
+
+        profile.get().setSocialLinks(request.getNewData());
+        profileRepository.save(profile.get());
+    }
 }
