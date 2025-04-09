@@ -46,4 +46,11 @@ public class UserController {
         userService.setUsername(request);
         return ApiResponse.success();
     }
+
+    // 자기소개 메시지 설정
+    @PatchMapping("/profile/bio")
+    public ResponseEntity<?> setBio(@RequestBody @Valid NewDataRequest request) {
+        userService.setBio(request);
+        return ApiResponse.success();
+    }
 }

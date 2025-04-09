@@ -88,4 +88,23 @@ public class UserService {
         profile.get().setUsername(request.getNewData());
         profileRepository.save(profile.get());
     }
+
+    // 자기소개 메시지 설정
+    public void setBio(NewDataRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        if (request.getNewData().length() > 300) {
+            throw new ApiException(ApiErrorType.BAD_REQUEST, null,"최대 300자까지 입력할 수 있습니다.");
+        }
+
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
+        }
+
+        profile.get().setBio(request.getNewData());
+        profileRepository.save(profile.get());
+    }
 }
