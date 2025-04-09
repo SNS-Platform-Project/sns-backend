@@ -10,4 +10,5 @@ import lombok.Data;
 public class PostResponse {
     private Post post;
     private User user;
+    private User repostedBy;
 }

@@ -23,43 +23,25 @@ public class CommentController {
         try {
             commentService.likeComment(commentId);
             return ApiResponse.success();
-
         } catch (DuplicateKeyException e) {
             return ApiResponse.conflict();
-        } catch (NoSuchElementException e) {
-            return ApiResponse.notFound(e.getMessage());
         }
     }
 
     @DeleteMapping("/{commentId}/like")
     public ResponseEntity<?> undoLikeComment(@PathVariable String commentId) {
-        try {
-            commentService.undoLikeComment(commentId);
-            return ApiResponse.success();
-
-        } catch (NoSuchElementException e) {
-            return ApiResponse.notFound(e.getMessage());
-        }
+        commentService.undoLikeComment(commentId);
+        return ApiResponse.success();
     }
 
     @GetMapping("/{commentId}/replies")
     public ResponseEntity<?> getReplies(@PathVariable String commentId, @ModelAttribute PageParam pageParam) {
-        try {
-            return ApiResponse.success(commentService.getReplies(commentId, pageParam));
-        } catch (NoSuchElementException e) {
-            return ApiResponse.notFound(e.getMessage());
-        }
+        return ApiResponse.success(commentService.getReplies(commentId, pageParam));
     }
 
     @DeleteMapping("/{commentId}")
     public ResponseEntity<?> deleteComment(@PathVariable String commentId) {
-        try {
-            commentService.deleteComment(commentId);
-            return ApiResponse.success();
-        } catch (NoSuchElementException e) {
-            return ApiResponse.notFound(e.getMessage());
-        } catch (ResponseStatusException e) {
-            return ApiResponse.status(e.getStatusCode(), e.getReason(), null);
-        }
+        commentService.deleteComment(commentId);
+        return ApiResponse.success();
     }
 }
