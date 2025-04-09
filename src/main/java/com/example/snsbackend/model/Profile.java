@@ -1,5 +1,6 @@
 package com.example.snsbackend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -42,6 +43,7 @@ public class Profile {
     @Field(name = "social_links")
     private String socialLinks;
 
+    @JsonIgnore
     @Field(name = "hashed_password")
     private String hashedPassword;
 }

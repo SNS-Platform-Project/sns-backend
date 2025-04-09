@@ -7,6 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class Post {
     private String userId;
 
     @Field("created_at")
-    private Date createdAt = new Date();  // 작성 시간
+    private LocalDateTime createdAt = LocalDateTime.now();  // 작성 시간
 
     @Field("content")
     private String content;  // 게시물 내용

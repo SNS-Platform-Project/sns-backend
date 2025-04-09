@@ -5,7 +5,7 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @Document("comment_likes")
@@ -16,7 +16,7 @@ public class CommentLike {
     @Field("user_id")
     private String userId;
     @Field("created_at")
-    private Date createdAt;
+    private LocalDateTime createdAt;
     @Field("post_id")
     private String postId;
 }

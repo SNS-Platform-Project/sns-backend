@@ -117,20 +117,20 @@ public class JwtProvider {
         }
     }
 
-    // Refresh Token 검증 (블랙리스트 구현 전이라 Access Token도 이걸로 검증)
+    // Refresh Token 검증
     public boolean validateRefreshToken(String token) {
         try {
-            String id = parseToken(token).getSubject();
-            Optional<RefreshToken> refreshToken = refreshTokenRepository.findById(id);
+            String userId = parseToken(token).getSubject();
+            Optional<RefreshToken> refreshToken = refreshTokenRepository.findByUserId(userId);
             return refreshToken.isPresent();
         } catch (ExpiredJwtException e) {
-            log.info("Expired Refresh Token");
+            log.info("Expired Refresh Token: {}", e.getMessage());
         } catch (SecurityException e) {
-            log.info("Invalid Refresh Token");
+            log.info("Invalid Refresh Token: {}", e.getMessage());
         } catch (UnsupportedJwtException e) {
-            log.info("Unsupported Refresh Token");
+            log.info("Unsupported Refresh Token: {}", e.getMessage());
         } catch (IllegalArgumentException e) {
-            log.info("Refresh Token claims string is empty");
+            log.info("Refresh Token claims string is empty: {}", e.getMessage());
         }
 
         return false;

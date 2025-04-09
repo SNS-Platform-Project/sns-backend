@@ -1,9 +1,12 @@
 package com.example.snsbackend.domain.user;
 
+import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.model.Profile;
 import com.example.snsbackend.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -32,5 +35,27 @@ public class UserService {
             return false;
         }
         return true;
+    }
+
+    // 프로필 조회 (user_id 사용)
+    public Optional<Profile> getProfile(String userId) {
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new RuntimeException("Profile not found [userId: " + userId + "]");
+        }
+        return profile;
+    }
+
+    // 프로필 조회 (token 사용)
+    public Optional<Profile> getMyProfile() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new RuntimeException("Profile not found [userId: " + userId + "]");
+        }
+        return profile;
     }
 }

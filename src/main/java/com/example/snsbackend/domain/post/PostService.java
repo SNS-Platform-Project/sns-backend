@@ -22,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -49,7 +50,7 @@ public class PostService {
 
         User user = new User(profile.getId(), profile.getUsername(), profile.getProfilePictureUrl());
 
-        return new PostResponse(post, user);
+        return new PostResponse(post, user, null);
     }
 
     public void createPost(PostRequest content) {
@@ -73,7 +74,7 @@ public class PostService {
 
         QuotePost post = new QuotePost(content);
         post.setUserId(userId);
-        post.setOriginal_post_id(originalPostId);
+        post.setOriginalPostId(originalPostId);
         post.setType("quote");
 
         quotePostRepository.save(post);
@@ -90,9 +91,11 @@ public class PostService {
 
         // 기존 게시글의 repost_count 수치 증가
         countUpdater.increment(originalPostId, "stat.repost_count", Post.class);
-
+        System.out.println(userDetails.getUserId());
+        System.out.println(originalPostId);
+        Repost repost = new Repost(userDetails.getUserId(), originalPostId);
         // 리포스트 저장
-        repostRepository.save(new Repost(userDetails.getUserId(), originalPostId, new Date()));
+        repostRepository.save(repost);
     }
 
     public void undoRepost(String originalPostId) {
@@ -147,7 +150,7 @@ public class PostService {
             throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
 
-        postLikeRepository.save(new PostLike(postId, userId, new Date()));
+        postLikeRepository.save(new PostLike(postId, userId, LocalDateTime.now()));
         countUpdater.increment(postId, "stat.likes_count", Post.class);
     }
 

@@ -37,6 +37,10 @@ public class ApiResponse<T> {
         return createResponseEntity(HttpStatus.CONFLICT, null, null);
     }
 
+    public static <T> ResponseEntity<ApiResponse<T>> status(HttpStatusCode status, String message, T body) {
+        return ResponseEntity.status(status).body(new ApiResponse<>(status, message, body));
+    }
+
     public static <T> ResponseEntity<ApiResponse<T>> status(HttpStatusCode status, String message) {
         return ResponseEntity.status(status).body(new ApiResponse<>(status, message, null));
     }
@@ -48,12 +52,12 @@ public class ApiResponse<T> {
 
     private static String getDefaultMessage(HttpStatus status) {
         return switch (status) {
-            case OK -> "요청이 성공했습니다.";
+            case OK -> "정상적으로 처리되었습니다.";
             case NOT_FOUND -> "리소스를 찾을 수 없습니다.";
             case CONFLICT -> "중복된 요청입니다.";
-            case BAD_REQUEST -> "잘못된 요청입니다.";
-            case INTERNAL_SERVER_ERROR -> "서버 내부 오류입니다.";
-            default -> "요청 처리 중 오류가 발생했습니다.";
+            case BAD_REQUEST -> "요청 형식이 잘못되었습니다.";
+            case INTERNAL_SERVER_ERROR -> "서버 내부 오류가 발생했습니다.";
+            default -> "요청 처리 중 예상치 못한 오류가 발생했습니다.";
         };
     }
 }

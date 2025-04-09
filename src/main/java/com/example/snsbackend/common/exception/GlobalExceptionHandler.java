@@ -1,6 +1,8 @@
 package com.example.snsbackend.common.exception;
 
 import com.example.snsbackend.dto.ApiResponse;
+import com.example.snsbackend.exception.ApiErrorType;
+import com.example.snsbackend.exception.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -39,6 +42,19 @@ public class GlobalExceptionHandler {
 
         // ApiResponse를 통해 오류 메시지 반환
         return ApiResponse.status(HttpStatus.BAD_REQUEST, bindingResult.getFieldErrors().getFirst().getDefaultMessage());
+    }
+
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiResponse<String>> exceptionHandler(ApiException e) {
+        ApiErrorType errorType = e.getErrorType();
+        String details = e.getDetails();
+        String detailMessage = e.getDetailMessage();
+
+        return ApiResponse.status(
+                errorType.getStatus(),
+                errorType.getMessage() + (details != null ? " (" + details + ")" : ""),
+                detailMessage
+        );
     }
 
     @ExceptionHandler(RuntimeException.class)

@@ -11,8 +11,8 @@ import org.springframework.data.mongodb.core.mapping.Field;
 @NoArgsConstructor
 @AllArgsConstructor
 public class QuotePost extends Post {
-    @Field("original_post")
-    private String original_post_id;     // 인용한 원본 트윗 ID
+    @Field("original_post_id")
+    private String originalPostId;     // 인용한 원본 트윗 ID
 
     public QuotePost(PostRequest content) {
         this.setContent(content.getContent());

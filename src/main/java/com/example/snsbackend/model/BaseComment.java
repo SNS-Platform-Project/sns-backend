@@ -7,7 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Setter
 @Getter
@@ -25,7 +25,7 @@ public class BaseComment {
     @Field("content")
     private String content;
     @Field("created_at")
-    private Date createdAt = new Date();
+    private LocalDateTime createdAt = LocalDateTime.now();
     @Field("likes_count")
     private int likesCount = 0;
 }

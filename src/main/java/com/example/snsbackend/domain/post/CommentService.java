@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -80,7 +81,7 @@ public class CommentService {
             return new NoSuchElementException("유효하지 않은 댓글 ID");
         });
         comment.setLikesCount(comment.getLikesCount() + 1);
-        commentLikeRepository.save(new CommentLike(commentId, userId, new Date(), comment.getPostId()));
+        commentLikeRepository.save(new CommentLike(commentId, userId, LocalDateTime.now(), comment.getPostId()));
         baseCommentRepository.save(comment);
     }
 
