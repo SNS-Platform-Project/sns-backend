@@ -1,5 +1,6 @@
 package com.example.snsbackend.domain.user;
 
+import com.example.snsbackend.dto.BirthdayRequest;
 import com.example.snsbackend.dto.NewDataRequest;
 import com.example.snsbackend.exception.ApiErrorType;
 import com.example.snsbackend.exception.ApiException;
@@ -120,6 +121,21 @@ public class UserService {
         }
 
         profile.get().setPublic(!profile.get().isPublic());
+        profileRepository.save(profile.get());
+    }
+
+    // 생일 설정
+    public void setBirthday(BirthdayRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
+        }
+
+        profile.get().setBirthday(request.getBirthday());
         profileRepository.save(profile.get());
     }
 }

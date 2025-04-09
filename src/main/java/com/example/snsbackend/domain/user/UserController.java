@@ -1,6 +1,7 @@
 package com.example.snsbackend.domain.user;
 
 import com.example.snsbackend.dto.ApiResponse;
+import com.example.snsbackend.dto.BirthdayRequest;
 import com.example.snsbackend.dto.NewDataRequest;
 import com.example.snsbackend.model.Profile;
 import jakarta.validation.Valid;
@@ -58,6 +59,13 @@ public class UserController {
     @PatchMapping("/profile/public")
     public ResponseEntity<?> setPrivacy() {
         userService.setPublic();
+        return ApiResponse.success();
+    }
+
+    // 생일 설정
+    @PatchMapping("/profile/birthday")
+    public ResponseEntity<?> setBirthday(@RequestBody @Valid BirthdayRequest request) {
+        userService.setBirthday(request);
         return ApiResponse.success();
     }
 }
