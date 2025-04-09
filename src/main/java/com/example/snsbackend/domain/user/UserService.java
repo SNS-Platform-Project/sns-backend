@@ -1,5 +1,8 @@
 package com.example.snsbackend.domain.user;
 
+import com.example.snsbackend.dto.NewDataRequest;
+import com.example.snsbackend.exception.ApiErrorType;
+import com.example.snsbackend.exception.ApiException;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.model.Profile;
 import com.example.snsbackend.repository.ProfileRepository;
@@ -57,5 +60,25 @@ public class UserService {
             throw new RuntimeException("Profile not found [userId: " + userId + "]");
         }
         return profile;
+    }
+
+    // username 설정
+    public void setUsername(NewDataRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        Optional<Profile> check = profileRepository.findByUsername(request.getNewData());
+        if (check.isPresent()) {
+            throw new ApiException(ApiErrorType.CONFLICT, "username: " + request.getNewData(), "이미 사용 중인 아이디입니다.");
+        }
+
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
+        }
+
+        profile.get().setUsername(request.getNewData());
+        profileRepository.save(profile.get());
     }
 }

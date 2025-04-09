@@ -1,7 +1,11 @@
 package com.example.snsbackend.domain.user;
 
+import com.example.snsbackend.dto.ApiResponse;
+import com.example.snsbackend.dto.NewDataRequest;
 import com.example.snsbackend.model.Profile;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -34,5 +38,12 @@ public class UserController {
     @GetMapping("/profile")
     public Optional<Profile> getMyProfile() {
         return userService.getMyProfile();
+    }
+
+    // username 설정
+    @PatchMapping("/profile/username")
+    public ResponseEntity<?> setUsername(@RequestBody @Valid NewDataRequest request) {
+        userService.setUsername(request);
+        return ApiResponse.success();
     }
 }
