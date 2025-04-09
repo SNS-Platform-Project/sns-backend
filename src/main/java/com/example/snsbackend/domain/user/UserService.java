@@ -13,12 +13,15 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final ProfileRepository profileRepository;
+
+    private final Pattern USERNAME_PATTERN = Pattern.compile("^(?!^\\.)(?!.*\\.$)(?!.*\\.\\.)(?=.{3,30}$)[a-z0-9._]+$");
 
     // username 중복 검사
     public boolean checkUsername(String username) {
@@ -71,6 +74,10 @@ public class UserService {
         Optional<Profile> check = profileRepository.findByUsername(request.getNewData());
         if (check.isPresent()) {
             throw new ApiException(ApiErrorType.CONFLICT, "username: " + request.getNewData(), "이미 사용 중인 아이디입니다.");
+        }
+
+        if (!USERNAME_PATTERN.matcher(request.getNewData()).matches()) {
+            throw new ApiException(ApiErrorType.INVALID_USERNAME, "username: " + request.getNewData());
         }
 
         Optional<Profile> profile = profileRepository.findById(userId);
