@@ -262,4 +262,25 @@ public class AuthService {
         authCodeRepository.deleteAll(authCodeRepository.findByExpiredAtBefore(LocalDateTime.now()));
         log.info("Expired Auth Code has been removed");
     }
+
+    // 비밀번호 초기화
+    public void resetPassword(LoginRequest request) {
+        // 이메일 인증 확인 (변수명은 usernameOrEmail이지만 email만 가능)
+        Optional<AuthCode> authCode = authCodeRepository.findByEmail(request.getUsernameOrEmail());
+        authCode.ifPresentOrElse(code -> {
+            if (!code.isEmailVerified()) {
+                throw new ApiException(ApiErrorType.NOT_VERIFIED_EMAIL, "email: " + request.getUsernameOrEmail());
+            }
+        }, () -> {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "email: " + request.getUsernameOrEmail(), "해당 이메일에 대한 인증 번호가 존재하지 않습니다.");
+        });
+
+        Optional<Profile> profile = profileRepository.findByEmail(request.getUsernameOrEmail());
+        if (profile.isEmpty()) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "email: " + request.getUsernameOrEmail(), "해당 계정을 찾지 못했습니다.");
+        }
+
+        profile.get().setHashedPassword(passwordEncoder.encode(request.getPassword()));
+        profileRepository.save(profile.get());
+    }
 }
