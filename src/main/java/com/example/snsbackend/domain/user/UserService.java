@@ -50,7 +50,7 @@ public class UserService {
     public Optional<Profile> getProfile(String userId) {
         Optional<Profile> profile = profileRepository.findById(userId);
         if (profile.isEmpty()) {
-            throw new RuntimeException("Profile not found [userId: " + userId + "]");
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
         }
         return profile;
     }
@@ -63,7 +63,7 @@ public class UserService {
 
         Optional<Profile> profile = profileRepository.findById(userId);
         if (profile.isEmpty()) {
-            throw new RuntimeException("Profile not found [userId: " + userId + "]");
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
         }
         return profile;
     }

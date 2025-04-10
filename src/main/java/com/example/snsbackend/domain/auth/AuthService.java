@@ -158,7 +158,7 @@ public class AuthService {
         refreshToken.ifPresentOrElse(token -> {
             refreshTokenRepository.deleteByUserId(userId);
         }, () -> {
-            throw new RuntimeException("No RefreshToken found. [userId: " + userId + "]");
+            throw new ApiException(ApiErrorType.NOT_FOUND_REFRESH_TOKEN, "user_id: " + userId, null);
         });
 
         log.info("logout successfully [userID: {}]", userId);
@@ -178,15 +178,13 @@ public class AuthService {
 
         // Refresh Token 검증
         if (!jwtProvider.validateRefreshToken(refreshToken)) {
-            log.debug("Invalid refresh token. [refresh_token: {}]", refreshToken);
-            return null;
+            throw new ApiException(ApiErrorType.NOT_FOUND_REFRESH_TOKEN);
         }
 
         // Refresh Token으로부터 사용자 정보 추출
         String userId = jwtProvider.getIdFromRefreshToken(refreshToken);
         if (userId == null || userId.isEmpty()) {
-            log.debug("Failed to extract user information from token [refresh_token: {}]",  refreshToken);
-            return null;
+            throw new ApiException(ApiErrorType.UNAUTHORIZED_REFRESH_TOKEN, null, "사용자 정보를 추출할 수 없습니다.");
         }
 
         // JWT 토큰 생성 후 Refresh Token 저장
@@ -196,12 +194,11 @@ public class AuthService {
 
     @Transactional
     // 인증번호 생성 후 이메일 전송
-    public ResponseEntity<?> sendCodeToEmail(EmailRequest email) {
+    public void sendCodeToEmail(EmailRequest email) {
         AuthCode authCode = createAuthCode(email.getEmail());
         try {
             emailService.sendAuthCodeEmail(email.getEmail(), authCode.getAuthCode());
             log.info("Email sent successfully [email: {}]", email.getEmail());
-            return ResponseEntity.ok().build();
         } catch (RuntimeException | MessagingException e) {
             e.printStackTrace();
             throw new RuntimeException("Unable to send email in sendCodeToEmail", e);
@@ -239,13 +236,13 @@ public class AuthService {
     }
 
     // 인증번호 검증
-    public ResponseEntity<?> verifyEmail(AuthCodeRequest request) {
+    public void verifyEmail(AuthCodeRequest request) {
         boolean isVerified = authCodeRepository.findByEmailAndAuthCode(request.getEmail(), request.getAuthCode())
                 .map(c -> c.getExpiredAt().isAfter(LocalDateTime.now()))
                 .orElse(false);
 
         if (!isVerified) {
-            throw new RuntimeException("Invalid email verification code. [email: " + request.getEmail() + "]");
+            throw new ApiException(ApiErrorType.NOT_FOUND, "email: " + request.getEmail(), "해당 이메일에 대한 인증 번호가 존재하지 않습니다.");
         }
 
         Optional<AuthCode> authCode = authCodeRepository.findByEmail(request.getEmail());
@@ -253,7 +250,6 @@ public class AuthService {
             code.setEmailVerified(isVerified);
             authCodeRepository.save(code);
         });
-        return ResponseEntity.ok().build();
     }
 
     // 만료된 인증번호 삭제

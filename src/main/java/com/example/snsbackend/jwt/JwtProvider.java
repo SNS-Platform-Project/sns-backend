@@ -1,5 +1,8 @@
 package com.example.snsbackend.jwt;
 
+import com.example.snsbackend.dto.ApiResponse;
+import com.example.snsbackend.exception.ApiErrorType;
+import com.example.snsbackend.exception.ApiException;
 import com.example.snsbackend.model.AccessTokenBlackList;
 import com.example.snsbackend.model.RefreshToken;
 import com.example.snsbackend.repository.AccessTokenBlackListRepository;
@@ -9,8 +12,10 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -122,17 +127,24 @@ public class JwtProvider {
         try {
             String userId = parseToken(token).getSubject();
             Optional<RefreshToken> refreshToken = refreshTokenRepository.findByUserId(userId);
-            return refreshToken.isPresent();
-        } catch (ExpiredJwtException e) {
-            log.info("Expired Refresh Token: {}", e.getMessage());
-        } catch (SecurityException e) {
-            log.info("Invalid Refresh Token: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            log.info("Unsupported Refresh Token: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            log.info("Refresh Token claims string is empty: {}", e.getMessage());
-        }
+            if (refreshToken.isEmpty()) {
+                return false;
+            }
+            if (refreshToken.get().getExpiredAt().isBefore(LocalDateTime.now())) {
+                throw new ApiException(ApiErrorType.UNAUTHORIZED_REFRESH_TOKEN, null, "JWT token has expired");
+            }
 
-        return false;
+            return true;
+        } catch (ExpiredJwtException e) {
+            throw new ApiException(ApiErrorType.UNAUTHORIZED_REFRESH_TOKEN, null, "JWT token has expired");
+        } catch (UnsupportedJwtException e) {
+            throw new ApiException(ApiErrorType.BAD_REQUEST_REFRESH_TOKEN, null, "JWT token is unsupported");
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(ApiErrorType.BAD_REQUEST_REFRESH_TOKEN, null, "JWT payload is invalid");
+        } catch (AuthenticationException e) {
+            throw new ApiException(ApiErrorType.UNAUTHORIZED_REFRESH_TOKEN, null, "Authentication failed. Invalid credentials.");
+        } catch (JwtException e) {
+            throw new ApiException(ApiErrorType.UNAUTHORIZED_REFRESH_TOKEN, null, "JWT was not correctly constructed");
+        }
     }
 }

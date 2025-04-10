@@ -20,26 +20,26 @@ public class UserController {
 
     // username 중복 검사
     @GetMapping("/check-username")
-    public boolean checkUsername(@RequestParam("username") String username){
-        return userService.checkUsername(username);
+    public ResponseEntity<?> checkUsername(@RequestParam("username") String username){
+        return ApiResponse.success(userService.checkUsername(username));
     }
 
     // 이메일 중복 검사
     @GetMapping("/check-email")
-    public boolean checkEmail(@RequestParam("email") String email){
-        return userService.checkEmail(email);
+    public ResponseEntity<?> checkEmail(@RequestParam("email") String email){
+        return ApiResponse.success(userService.checkEmail(email));
     }
 
     // 프로필 조회 (user_id 사용)
     @GetMapping("/{user_id}/profile")
-    public Optional<Profile> getProfile(@PathVariable String user_id) {
-        return userService.getProfile(user_id);
+    public ResponseEntity<?> getProfile(@PathVariable String user_id) {
+        return ApiResponse.success(userService.getProfile(user_id));
     }
 
     // 프로필 조회 (token 사용)
     @GetMapping("/profile")
-    public Optional<Profile> getMyProfile() {
-        return userService.getMyProfile();
+    public ResponseEntity<?> getMyProfile() {
+        return ApiResponse.success(userService.getMyProfile());
     }
 
     // username 설정
