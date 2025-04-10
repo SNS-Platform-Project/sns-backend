@@ -2,9 +2,11 @@ package com.example.snsbackend.domain.user;
 
 import com.example.snsbackend.dto.BirthdayRequest;
 import com.example.snsbackend.dto.NewDataRequest;
+import com.example.snsbackend.dto.ProfilePictureRequest;
 import com.example.snsbackend.exception.ApiErrorType;
 import com.example.snsbackend.exception.ApiException;
 import com.example.snsbackend.jwt.CustomUserDetails;
+import com.example.snsbackend.model.Image;
 import com.example.snsbackend.model.Profile;
 import com.example.snsbackend.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -152,5 +154,34 @@ public class UserService {
 
         profile.get().setSocialLinks(request.getNewData());
         profileRepository.save(profile.get());
+    }
+
+    // 프로필 사진 업로드
+    public void setProfilePicture(ProfilePictureRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
+        }
+
+        profile.get().setProfilePictureUrl(request.getImage());
+        profileRepository.save(profile.get());
+    }
+
+    // 프로필 사진 조회
+    public Image getImage() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        Optional<Profile> profile = profileRepository.findById(userId);
+        if (profile.isEmpty()) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
+        }
+
+        return profile.get().getProfilePictureUrl();
     }
 }

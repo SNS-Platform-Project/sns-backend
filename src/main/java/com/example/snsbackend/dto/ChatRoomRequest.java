@@ -1,11 +1,9 @@
 package com.example.snsbackend.dto;
 
-import com.example.snsbackend.common.validation.NoBlackInList;
-import jakarta.validation.constraints.NotBlank;
+import com.example.snsbackend.common.validation.NoBlankInList;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.util.List;
 
@@ -13,7 +11,7 @@ import java.util.List;
 public class ChatRoomRequest {
     @NotNull
     private String name;
-    @NoBlackInList
+    @NoBlankInList
     @NotEmpty
     private List<String> userIds;
 }

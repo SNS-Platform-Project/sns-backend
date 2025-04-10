@@ -3,6 +3,7 @@ package com.example.snsbackend.domain.user;
 import com.example.snsbackend.dto.ApiResponse;
 import com.example.snsbackend.dto.BirthdayRequest;
 import com.example.snsbackend.dto.NewDataRequest;
+import com.example.snsbackend.dto.ProfilePictureRequest;
 import com.example.snsbackend.model.Profile;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -74,5 +75,18 @@ public class UserController {
     public ResponseEntity<?> setLink(@RequestBody @Valid NewDataRequest request) {
         userService.setSocialLinks(request);
         return ApiResponse.success();
+    }
+
+    // 프로필 사진 업로드
+    @PatchMapping("/profile/photo")
+    public ResponseEntity<?> setPhoto(@RequestBody @Valid ProfilePictureRequest request) {
+        userService.setProfilePicture(request);
+        return ApiResponse.success();
+    }
+
+    // 프로필 사진 조회
+    @GetMapping("/profile/photo")
+    public ResponseEntity<?> getPhoto() {
+        return ApiResponse.success(userService.getImage());
     }
 }

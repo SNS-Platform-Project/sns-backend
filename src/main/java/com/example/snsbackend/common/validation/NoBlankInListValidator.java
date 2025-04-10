@@ -5,7 +5,7 @@ import jakarta.validation.ConstraintValidatorContext;
 
 import java.util.List;
 
-public class NoBlankInListValidator implements ConstraintValidator<NoBlackInList, List<String>> {
+public class NoBlankInListValidator implements ConstraintValidator<NoBlankInList, List<String>> {
 
     @Override
     public boolean isValid(List<String> value, ConstraintValidatorContext context) {
