@@ -22,15 +22,13 @@ public class PostController {
     }
 
     @PostMapping("/regular")
-    public ResponseEntity<ApiResponse<Void>> createPost(@Valid @RequestBody PostRequest content) {
-        postService.createPost(content);
-        return ApiResponse.success();
+    public ResponseEntity<ApiResponse<String>> createPost(@Valid @RequestBody PostRequest content) {
+        return ApiResponse.success(postService.createPost(content));
     }
 
     @PostMapping("/{originalPostId}/quote")
-    public ResponseEntity<ApiResponse<Void>> createQuotePost(@PathVariable String originalPostId, @RequestBody PostRequest content) {
-        postService.createQuote(originalPostId, content);
-        return ApiResponse.success();
+    public ResponseEntity<ApiResponse<String>> createQuotePost(@PathVariable String originalPostId, @RequestBody PostRequest content) {
+        return ApiResponse.success(postService.createQuote(originalPostId, content));
     }
     @PostMapping("/{originalPostId}/repost")
     public ResponseEntity<ApiResponse<Void>> createRepost(@PathVariable String originalPostId) {

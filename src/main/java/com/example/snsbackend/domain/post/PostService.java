@@ -53,7 +53,7 @@ public class PostService {
         return new PostResponse(post, user, null);
     }
 
-    public void createPost(PostRequest content) {
+    public String createPost(PostRequest content) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
@@ -61,9 +61,10 @@ public class PostService {
         post.setUserId(userId);
 
         postRepository.save(post);
+        return post.getId();
     }
 
-    public void createQuote(String originalPostId, PostRequest content) {
+    public String createQuote(String originalPostId, PostRequest content) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
@@ -78,6 +79,7 @@ public class PostService {
         post.setType("quote");
 
         quotePostRepository.save(post);
+        return post.getId();
     }
 
     public void createRepost(String originalPostId) {
