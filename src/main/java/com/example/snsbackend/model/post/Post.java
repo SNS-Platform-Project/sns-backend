@@ -45,12 +45,21 @@ public class Post {
     private Post(String type, String userId, PostRequest content, String originalPostId) {
         this.type = type;
         this.userId = userId;
-        this.content = content.getContent();
-        this.entities.setHashtags(content.getHashtags());
-        this.entities.setMentions(content.getMentions());
-        this.images = content.getImages();
         this.createdAt = LocalDateTime.now();
-        this.originalPostId = originalPostId;
+        switch (type) {
+            case "quote":
+                this.originalPostId = originalPostId;
+                break;
+            case "post":
+                this.content = content.getContent();
+                this.entities = new PostEntities();
+                this.entities.setHashtags(content.getHashtags());
+                this.entities.setMentions(content.getMentions());
+                this.images = content.getImages();
+            case "repost":
+                this.originalPostId = originalPostId;
+                break;
+        }
     }
 
     public static PostBuilder original() {

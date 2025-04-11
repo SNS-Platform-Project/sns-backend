@@ -9,8 +9,6 @@ import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
 import com.example.snsbackend.model.post.Post;
-import com.example.snsbackend.model.post.SharedPost;
-import com.example.snsbackend.model.post.Repost;
 import com.example.snsbackend.repository.*;
 import com.mongodb.client.result.DeleteResult;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +18,6 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -80,22 +77,22 @@ public class PostService {
         return quotePost.getId();
     }
 
-    public void createRepost(String originalPostId) {
+    public String createRepost(String originalPostId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
         if (!postRepository.existsById(originalPostId)) {
             log.warn("유효하지 않은 게시물 ID: {}", originalPostId);
             throw  new NoSuchElementException("유효하지 않은 게시물 ID");
         }
-
+        // TODO: 이미 리포스트 했는지 검증 필요
         // 기존 게시글의 repost_count 수치 증가
         countUpdater.increment(originalPostId, "stat.repost_count", Post.class);
-        System.out.println(userDetails.getUserId());
-        System.out.println(originalPostId);
-        Repost repost = new Repost(userDetails.getUserId(), originalPostId);
-        // 리포스트 저장
-        repostRepository.save(repost);
+
+        Post repost = Post.repost(originalPostId).by(userId);
+
+        postRepository.save(repost);
+        return repost.getId();
     }
 
     public void undoRepost(String originalPostId) {
@@ -137,7 +134,6 @@ public class PostService {
     private void deleteRelatedPost(String postId) {
         mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), CommentLike.class);
         mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), Comment.class);
-        mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), Repost.class);
         mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), PostLike.class);
     }
 

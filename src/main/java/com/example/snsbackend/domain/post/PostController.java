@@ -31,14 +31,8 @@ public class PostController {
         return ApiResponse.success(postService.createQuote(originalPostId, content));
     }
     @PostMapping("/{originalPostId}/repost")
-    public ResponseEntity<ApiResponse<Void>> createRepost(@PathVariable String originalPostId) {
-        try {
-            postService.createRepost(originalPostId);
-            return ApiResponse.success();
-        } catch (DuplicateKeyException e) {
-            System.out.println(e);
-            return ApiResponse.conflict();
-        }
+    public ResponseEntity<ApiResponse<String>> createRepost(@PathVariable String originalPostId) {
+        return ApiResponse.success(postService.createRepost(originalPostId));
     }
 
     @DeleteMapping("/{postId}")
