@@ -5,6 +5,8 @@ import com.example.snsbackend.dto.PageParam;
 import com.example.snsbackend.dto.PostResponse;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.model.*;
+import com.example.snsbackend.model.post.Post;
+import com.example.snsbackend.model.post.Repost;
 import com.example.snsbackend.repository.FollowingRepository;
 import com.example.snsbackend.repository.ProfileRepository;
 import lombok.RequiredArgsConstructor;

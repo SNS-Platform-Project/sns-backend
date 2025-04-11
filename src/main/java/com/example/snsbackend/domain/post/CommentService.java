@@ -5,6 +5,7 @@ import com.example.snsbackend.dto.NoOffsetPage;
 import com.example.snsbackend.dto.PageParam;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.model.*;
+import com.example.snsbackend.model.post.Post;
 import com.example.snsbackend.repository.*;
 import com.mongodb.client.result.DeleteResult;
 import lombok.RequiredArgsConstructor;

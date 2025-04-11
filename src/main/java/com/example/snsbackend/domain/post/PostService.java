@@ -8,6 +8,9 @@ import com.example.snsbackend.dto.PostResponse;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
+import com.example.snsbackend.model.post.Post;
+import com.example.snsbackend.model.post.SharedPost;
+import com.example.snsbackend.model.post.Repost;
 import com.example.snsbackend.repository.*;
 import com.mongodb.client.result.DeleteResult;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +20,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -29,8 +33,6 @@ import java.util.*;
 @Slf4j
 @RequiredArgsConstructor
 public class PostService {
-    private final QuotePostRepository quotePostRepository;
-    private final RepostRepository repostRepository;
     private final PostRepository postRepository;
     private final MongoTemplate mongoTemplate;
     private final PostLikeRepository postLikeRepository;
@@ -57,8 +59,7 @@ public class PostService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
-        Post post = new Post(content);
-        post.setUserId(userId);
+        Post post = Post.original().content(content).by(userId);
 
         postRepository.save(post);
         return post.getId();
@@ -73,13 +74,10 @@ public class PostService {
             throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
 
-        QuotePost post = new QuotePost(content);
-        post.setUserId(userId);
-        post.setOriginalPostId(originalPostId);
-        post.setType("quote");
+        Post quotePost = Post.quote(originalPostId).content(content).by(userId);
 
-        quotePostRepository.save(post);
-        return post.getId();
+        postRepository.save(quotePost);
+        return quotePost.getId();
     }
 
     public void createRepost(String originalPostId) {
