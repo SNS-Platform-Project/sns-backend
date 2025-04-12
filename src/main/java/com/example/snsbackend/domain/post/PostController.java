@@ -17,7 +17,7 @@ public class PostController {
     private final CommentService commentService;
 
     @GetMapping("/{postId}")
-    public ResponseEntity<ApiResponse<PostResponse>> getPost(@PathVariable String postId) {
+    public ResponseEntity<ApiResponse<PostDetail>> getPost(@PathVariable String postId) {
         return ApiResponse.success(postService.getPost(postId));
     }
 
@@ -43,7 +43,7 @@ public class PostController {
 
     @DeleteMapping("/{originalPostId}/repost")
     public ResponseEntity<ApiResponse<Void>> undoRepost(@PathVariable String originalPostId) {
-        postService.undoRepost(originalPostId);
+        //postService.undoRepost(originalPostId);
         return ApiResponse.success();
     }
 

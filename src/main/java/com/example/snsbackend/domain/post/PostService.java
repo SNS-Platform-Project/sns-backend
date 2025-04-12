@@ -4,7 +4,6 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.api.ApiResponse;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.snsbackend.dto.ImageRequest;
-import com.example.snsbackend.dto.PostResponse;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
@@ -35,8 +34,12 @@ public class PostService {
     private final PostLikeRepository postLikeRepository;
     private final ProfileRepository profileRepository;
     private final CountUpdater countUpdater;
+    private final PostDetailFactory postDetailFactory;
 
-    public PostResponse getPost(String postId) {
+    public PostDetail getPost(String postId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
+
         Post post = postRepository.findById(postId).orElseThrow(() -> {
             log.warn("유효하지 않은 게시물 ID: {}", postId);
             return new NoSuchElementException("게시물 ID가 유효하지 않습니다.");
@@ -47,9 +50,7 @@ public class PostService {
             return new NoSuchElementException("사용자 ID가 유효하지 않습니다.");
         });
 
-        User user = new User(profile.getId(), profile.getUsername(), profile.getProfilePictureUrl());
-
-        return new PostResponse(post, user, null);
+        return postDetailFactory.createFrom(post, userId);
     }
 
     public String createPost(PostRequest content) {
@@ -83,34 +84,41 @@ public class PostService {
 
         if (!postRepository.existsById(originalPostId)) {
             log.warn("유효하지 않은 게시물 ID: {}", originalPostId);
-            throw  new NoSuchElementException("유효하지 않은 게시물 ID");
+            throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
-        // TODO: 이미 리포스트 했는지 검증 필요
-        // 기존 게시글의 repost_count 수치 증가
-        countUpdater.increment(originalPostId, "stat.repost_count", Post.class);
 
-        Post repost = Post.repost(originalPostId).by(userId);
+        boolean reposted = mongoTemplate.exists(new Query(Criteria.where("original_post_id").is(originalPostId)
+                .and("user_id").is(userId).and("type").is("repost")), Post.class);
+        if (!reposted) {
+            // 기존 게시글의 repost_count 수치 증가
+            countUpdater.increment(originalPostId, "stat.repost_count", Post.class);
 
-        postRepository.save(repost);
-        return repost.getId();
-    }
+            Post repost = Post.repost(originalPostId).by(userId);
 
-    public void undoRepost(String originalPostId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
-        DeleteResult result = mongoTemplate.remove(
-                new Query(Criteria.where("userId").is(userDetails.getUserId())
-                        .and("postId").is(originalPostId)), Repost.class);
-
-        if (result.getDeletedCount() > 0) {
-            // 기존 게시글의 repost_count 수치 감소
-            countUpdater.decrement(originalPostId, "stat.repost_count", Post.class);
+            postRepository.save(repost);
+            return repost.getId();
         } else {
-            log.warn("사용자 {}가 게시물 {}을 리포스트한 기록이 없습니다.", userDetails.getUserId(), originalPostId);
-            throw new NoSuchElementException("사용자의 리포스트 기록이 없음");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 리포스트한 게시글입니다.");
         }
+
     }
+
+//    public void undoRepost(String originalPostId) {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+//
+//        DeleteResult result = mongoTemplate.remove(
+//                new Query(Criteria.where("userId").is(userDetails.getUserId())
+//                        .and("postId").is(originalPostId)), Repost.class);
+//
+//        if (result.getDeletedCount() > 0) {
+//            // 기존 게시글의 repost_count 수치 감소
+//            countUpdater.decrement(originalPostId, "stat.repost_count", Post.class);
+//        } else {
+//            log.warn("사용자 {}가 게시물 {}을 리포스트한 기록이 없습니다.", userDetails.getUserId(), originalPostId);
+//            throw new NoSuchElementException("사용자의 리포스트 기록이 없음");
+//        }
+//    }
 
     public void deletePost(String postId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
