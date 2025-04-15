@@ -59,5 +59,6 @@ public class PostDetail {
         private String username;
         private int followerCount;
         private boolean isPrivate;
+        private FriendshipStatus friendshipStatus;
     }
 }

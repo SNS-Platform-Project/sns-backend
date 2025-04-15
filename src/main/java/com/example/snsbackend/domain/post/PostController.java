@@ -43,7 +43,7 @@ public class PostController {
 
     @DeleteMapping("/{originalPostId}/repost")
     public ResponseEntity<ApiResponse<Void>> undoRepost(@PathVariable String originalPostId) {
-        //postService.undoRepost(originalPostId);
+        postService.undoRepost(originalPostId);
         return ApiResponse.success();
     }
 

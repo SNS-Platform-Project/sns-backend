@@ -71,6 +71,11 @@ public class PostDetailFactory {
                         .lastVisitedTime(user.getLastActive())
                         .followerCount(user.getFollowersCount())
                         .profilePicUrl(user.getProfilePictureUrl())
+                        .friendshipStatus(PostDetail.User.FriendshipStatus.builder()
+                                .muting(false)
+                                .following(false)
+                                .followedBy(false)
+                                .outgoingRequest(false).build())
                         .build())
 
                 .postInfo(PostDetail.PostInfo.builder()

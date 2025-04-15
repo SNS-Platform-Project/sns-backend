@@ -103,22 +103,22 @@ public class PostService {
 
     }
 
-//    public void undoRepost(String originalPostId) {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-//
-//        DeleteResult result = mongoTemplate.remove(
-//                new Query(Criteria.where("userId").is(userDetails.getUserId())
-//                        .and("postId").is(originalPostId)), Repost.class);
-//
-//        if (result.getDeletedCount() > 0) {
-//            // 기존 게시글의 repost_count 수치 감소
-//            countUpdater.decrement(originalPostId, "stat.repost_count", Post.class);
-//        } else {
-//            log.warn("사용자 {}가 게시물 {}을 리포스트한 기록이 없습니다.", userDetails.getUserId(), originalPostId);
-//            throw new NoSuchElementException("사용자의 리포스트 기록이 없음");
-//        }
-//    }
+    public void undoRepost(String originalPostId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        DeleteResult result = mongoTemplate.remove(
+                new Query(Criteria.where("userId").is(userDetails.getUserId())
+                        .and("originalPostId").is(originalPostId)), Post.class);
+
+        if (result.getDeletedCount() > 0) {
+            // 기존 게시글의 repost_count 수치 감소
+            countUpdater.decrement(originalPostId, "stat.repost_count", Post.class);
+        } else {
+            log.warn("사용자 {}가 게시물 {}을 리포스트한 기록이 없습니다.", userDetails.getUserId(), originalPostId);
+            throw new NoSuchElementException("사용자의 리포스트 기록이 없음");
+        }
+    }
 
     public void deletePost(String postId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -155,7 +155,7 @@ public class PostService {
         }
 
         postLikeRepository.save(new PostLike(postId, userId, LocalDateTime.now()));
-        countUpdater.increment(postId, "stat.likes_count", Post.class);
+        countUpdater.increment(postId, "stat.like_count", Post.class);
     }
 
     public void undoLikePost(String postId) {
@@ -168,7 +168,7 @@ public class PostService {
 
         if (result.getDeletedCount() > 0) {
             // 기존 게시글의 likes_count 수치 감소
-            countUpdater.decrement(postId, "stat.likes_count", Post.class);
+            countUpdater.decrement(postId, "stat.like_count", Post.class);
         } else {
             log.warn("사용자 {}가 게시물 {}을 좋아요한 기록이 없습니다.", userId, postId);
             throw new NoSuchElementException("사용자의 게시물 좋아요 기록 없음");
