@@ -12,8 +12,6 @@ public class Follow {
     @Field(name = "follow_id")
     private String followId;
 
-    private String username;
-
     @Field(name = "created_at")
     private LocalDateTime createdAt;
 }

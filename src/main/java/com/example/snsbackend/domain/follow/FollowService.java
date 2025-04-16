@@ -1,16 +1,11 @@
 package com.example.snsbackend.domain.follow;
 
+import com.example.snsbackend.exception.ApiErrorType;
+import com.example.snsbackend.exception.ApiException;
 import com.example.snsbackend.jwt.CustomUserDetails;
-import com.example.snsbackend.mapper.FollowMapper;
-import com.example.snsbackend.mapper.FollowerMapper;
-import com.example.snsbackend.mapper.FollowingMapper;
-import com.example.snsbackend.model.Follow;
-import com.example.snsbackend.model.Follower;
-import com.example.snsbackend.model.Following;
-import com.example.snsbackend.model.Profile;
-import com.example.snsbackend.repository.FollowerRepository;
-import com.example.snsbackend.repository.FollowingRepository;
-import com.example.snsbackend.repository.ProfileRepository;
+import com.example.snsbackend.mapper.*;
+import com.example.snsbackend.model.*;
+import com.example.snsbackend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,25 +22,93 @@ public class FollowService {
     private final FollowMapper followMapper;
     private final FollowingMapper followingMapper;
     private final FollowerMapper followerMapper;
+    private final ReceivedFollowRequestRepository receivedFollowRequestRepository;
+    private final ReceivedFollowRequestMapper receivedFollowRequestMapper;
+    private final SentFollowRequestRepository sentFollowRequestRepository;
+    private final SentFollowRequestMapper sentFollowRequestMapper;
 
     // 팔로우
     public void follow(String followId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String userId = customUserDetails.getUserId();
-        String username = customUserDetails.getUsername();
 
-        try {
-            // 팔로잉 추가
+        Following following = followingRepository.findByUserId(userId);
+        // 팔로잉 중복 확인
+        if (following != null) {
+            boolean alreadyFollowing = following.getFollowings().stream()
+                    .anyMatch(existingFollow -> existingFollow.getFollowId().equals(followId));
+            if (alreadyFollowing) {
+                throw new ApiException(ApiErrorType.CONFLICT, "userId: " + followId, "이미 팔로우 중입니다. (following)");
+            }
+        }
+
+        // 팔로잉 추가
+        if (isPrivate(followId)) {
+            // 팔로우 정보
+            profileRepository.findById(followId)
+                    .orElseThrow(() -> new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "해당 계정을 찾지 못했습니다."));
+            Follow follow = followMapper.toFollow(followId);
+
+            // 팔로우 요청 목록 유무 확인 (없으면 생성)
+            SentFollowRequest sentFollowRequest = sentFollowRequestRepository.findByUserId(userId);
+            if (sentFollowRequest == null) {
+                sentFollowRequest = sentFollowRequestMapper.toSentFollowRequest(userId);
+                sentFollowRequest.setFollowings(new ArrayList<>());
+            }
+
+            // 팔로우 요청 중복 확인
+            boolean alreadyFollowingRequest = sentFollowRequest.getFollowings().stream()
+                    .anyMatch(existingFollowRequest -> existingFollowRequest.getFollowId().equals(followId));
+            if (alreadyFollowingRequest) {
+                throw new ApiException(ApiErrorType.CONFLICT, "userId: " + followId, "이미 팔로우 요청 중입니다.");
+            }
+
+            // 팔로잉 요청 목록에 추가
+            sentFollowRequest.getFollowings().add(follow);
+            sentFollowRequestRepository.save(sentFollowRequest);
+        } else {
             following(userId, followId);
-        } catch (RuntimeException e) {
-            unfollower(userId, followId);
-            throw new RuntimeException(e);
         }
 
         try {
+            Follower follower = followerRepository.findByUserId(followId);
+            if (follower != null) {
+                // 팔로워 중복 확인
+                boolean alreadyFollower = follower.getFollowers().stream()
+                        .anyMatch(existingFollow -> existingFollow.getFollowId().equals(userId));
+                if (alreadyFollower) {
+                    throw new ApiException(ApiErrorType.CONFLICT, "userId: " + userId, "이미 팔로우 중입니다. (follower)");
+                }
+            }
+
             // 팔로워 추가
-            follower(userId, username, followId);
+            if (isPrivate(followId)) {
+                // 팔로우 정보
+                Profile followProfile = profileRepository.findById(followId)
+                        .orElseThrow(() -> new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "해당 계정을 찾지 못했습니다."));
+                Follow follow = followMapper.toFollow(userId);
+
+                // 팔로우 요청 목록 유무 확인
+                ReceivedFollowRequest receivedFollowRequest = receivedFollowRequestRepository.findByUserId(followId);
+                if (receivedFollowRequest == null) {
+                    receivedFollowRequest = receivedFollowRequestMapper.toFollowRequest(followId);
+                    receivedFollowRequest.setFollowers(new ArrayList<>());
+                }
+
+                // 팔로우 요청 중복 확인
+                boolean alreadyFollowerRequest = receivedFollowRequest.getFollowers().stream()
+                        .anyMatch(existingFollowRequest -> existingFollowRequest.getFollowId().equals(userId));
+                if (alreadyFollowerRequest) {
+                    throw new ApiException(ApiErrorType.CONFLICT, "userId: " + userId, "이미 팔로우 요청 중입니다.");
+                }
+
+                // 팔로우 요청 목록에 추가
+                receivedFollowRequest.getFollowers().add(follow);
+                receivedFollowRequestRepository.save(receivedFollowRequest);
+            } else {
+                follower(userId, followId);
+            }
         } catch (RuntimeException e) {
             unfollowing(userId, followId);
             throw new RuntimeException(e);
@@ -58,19 +121,50 @@ public class FollowService {
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String userId = customUserDetails.getUserId();
 
-        try {
-            // 팔로잉 삭제
-            unfollowing(userId, followId);
-        } catch (RuntimeException e) {
-            unfollower(userId, followId);
-            throw new RuntimeException(e);
-        }
+        // 팔로잉 삭제
+        unfollowing(userId, followId);
 
         try {
             // 팔로워 삭제
             unfollower(userId, followId);
         } catch (RuntimeException e) {
-            unfollowing(userId, followId);
+            following(userId, followId);
+            throw new RuntimeException(e);
+        }
+    }
+
+    // 팔로우 요청 수락
+    public void acceptFollowRequest(String followId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        // 받은 팔로우 요청 수락
+        acceptReceivedFollowRequest(userId, followId);
+
+        try {
+            // 보낸 팔로우 요청 수락
+            acceptSentFollowRequest(userId, followId);
+        } catch (RuntimeException e) {
+            unfollower(followId, userId);
+            throw new RuntimeException(e);
+        }
+    }
+
+    // 팔로우 요청 삭제
+    public void rejectFollowRequest(String followId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        // 받은 팔로우 요청 삭제
+        rejectReceivedFollowRequest(userId, followId);
+
+        try {
+            // 보낸 팔로우 요청 삭제
+            rejectSentFollowRequest(userId, followId);
+        } catch (RuntimeException e) {
+            following(followId, userId);
             throw new RuntimeException(e);
         }
     }
@@ -95,6 +189,11 @@ public class FollowService {
 
     // 팔로잉 추가
     private void following(String userId, String followId) {
+        // 팔로우 정보
+        profileRepository.findById(followId)
+                .orElseThrow(() -> new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "해당 계정을 찾지 못했습니다."));
+        Follow follow = followMapper.toFollow(followId);
+
         // 팔로잉 목록 유무 확인 (없으면 생성)
         Following following = followingRepository.findByUserId(userId);
         if (following == null) {
@@ -106,13 +205,8 @@ public class FollowService {
         boolean alreadyFollowing = following.getFollowings().stream()
                 .anyMatch(existingFollow -> existingFollow.getFollowId().equals(followId));
         if (alreadyFollowing) {
-            throw new RuntimeException("Follow already exists (following) [userId: " + followId + "]");
+            throw new ApiException(ApiErrorType.CONFLICT, "userId: " + followId, "이미 팔로우 중입니다. (following)");
         }
-
-        // 팔로우 정보
-        Profile followProfile = profileRepository.findById(followId)
-                .orElseThrow(() -> new RuntimeException("Profile not found (following) [userId: " + followId + "]"));
-        Follow follow = followMapper.toFollow(followId, followProfile.getUsername());
 
         // 팔로잉 목록에 추가
         following.getFollowings().add(follow);
@@ -120,17 +214,17 @@ public class FollowService {
 
         // 팔로잉 수 증가
         Profile profile = profileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found (following) [userId: " + userId + "]"));
+                .orElseThrow(() -> new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다."));
         profile.setFollowingCount(profile.getFollowingCount() + 1);
         profileRepository.save(profile);
     }
 
     // 팔로워 추가
-    private void follower(String userId, String username, String followId) {
+    private void follower(String userId, String followId) {
         // 팔로우 정보
         Profile followProfile = profileRepository.findById(followId)
-                .orElseThrow(() -> new RuntimeException("Profile not found (follower) [userId: " + followId + "]"));
-        Follow follow = followMapper.toFollow(userId, username);
+                .orElseThrow(() -> new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "해당 계정을 찾지 못했습니다."));
+        Follow follow = followMapper.toFollow(userId);
 
         // 팔로워 목록 유무 확인
         Follower follower = followerRepository.findByUserId(followId);
@@ -143,7 +237,7 @@ public class FollowService {
         boolean alreadyFollower = follower.getFollowers().stream()
                 .anyMatch(existingFollow -> existingFollow.getFollowId().equals(userId));
         if (alreadyFollower) {
-            throw new RuntimeException("Follow already exists (follower) [userId: " + userId + "]");
+            throw new ApiException(ApiErrorType.CONFLICT, "userId: " + userId, "이미 팔로우 중입니다. (follower)");
         }
 
         // 팔로워 목록에 추가
@@ -160,14 +254,14 @@ public class FollowService {
         // 팔로잉 목록 유무 확인
         Following following = followingRepository.findByUserId(userId);
         if (following == null) {
-            throw new RuntimeException("Following not found (following) [userId: " + userId + "]");
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "팔로잉 목록을 찾을 수 없습니다. (following)");
         }
 
         // 팔로우 유무 확인
         boolean removed = following.getFollowings().stream()
                 .anyMatch(existingFollow -> existingFollow.getFollowId().equals(followId));
         if (!removed) {
-            throw new RuntimeException("Follow not found (following) [userId: " + followId + "]");
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "팔로잉 목록에서 찾을 수 없습니다. (following)");
         }
 
         // 팔로잉 목록에서 삭제
@@ -181,7 +275,7 @@ public class FollowService {
 
         // 팔로잉 수 감소
         Profile profile = profileRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Profile not found (following) [userId: " + userId + "]"));
+                .orElseThrow(() -> new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다. (following)"));
         profile.setFollowingCount(profile.getFollowingCount() - 1);
         profileRepository.save(profile);
     }
@@ -191,14 +285,14 @@ public class FollowService {
         // 팔로워 목록 유무 확인
         Follower follower = followerRepository.findByUserId(followId);
         if (follower == null) {
-            throw new RuntimeException("Follower not found (follower) [userId: " + followId + "]");
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "팔로워 목록을 찾을 수 없습니다. (follower)");
         }
 
         // 팔로우 유무 확인
         boolean removed = follower.getFollowers().stream()
                 .anyMatch(existingFollow -> existingFollow.getFollowId().equals(userId));
         if (!removed) {
-            throw new RuntimeException("Follow not found (follower) [userId: " + userId + "]");
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "팔로워 목록에서 찾을 수 없습니다. (follower)");
         }
 
         // 팔로워 목록에서 삭제
@@ -212,8 +306,120 @@ public class FollowService {
 
         // 팔로워 수 감소
         Profile followProfile = profileRepository.findById(followId)
-                .orElseThrow(() -> new RuntimeException("Profile not found (follower) [userId: " + followId + "]"));
+                .orElseThrow(() -> new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "해당 계정을 찾지 못했습니다. (follower)"));
         followProfile.setFollowersCount(followProfile.getFollowersCount() - 1);
         profileRepository.save(followProfile);
+    }
+
+    // 계정 공개 여부
+    private boolean isPrivate(String userId) {
+        Profile profile = profileRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다."));
+        return profile.isPrivate();
+    }
+
+    // 받은 팔로우 요청 수락
+    private void acceptReceivedFollowRequest(String userId, String followId) {
+        // 팔로우 요청 목록 유무 확인
+        ReceivedFollowRequest receivedFollowRequest = receivedFollowRequestRepository.findByUserId(userId);
+        if (receivedFollowRequest == null) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "팔로우 요청 목록을 찾을 수 없습니다.");
+        }
+
+        // 팔로우 유무 확인
+        boolean removed = receivedFollowRequest.getFollowers().stream()
+                .anyMatch(existingFollowRequest -> existingFollowRequest.getFollowId().equals(followId));
+        if (!removed) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "팔로우 요청 목록에서 찾을 수 없습니다.");
+        }
+
+        // 팔로우 요청 목록에서 삭제
+        receivedFollowRequest.getFollowers().removeIf(existingFollowRequest -> existingFollowRequest.getFollowId().equals(followId));
+        receivedFollowRequestRepository.save(receivedFollowRequest);
+
+        // 팔로우 요청 목록 비었는지 확인
+        if (receivedFollowRequest.getFollowers().isEmpty()) {
+            receivedFollowRequestRepository.delete(receivedFollowRequest);
+        }
+
+        follower(followId, userId);
+    }
+
+    // 보낸 팔로우 요청 수락
+    private void acceptSentFollowRequest(String userId, String followId) {
+        // 팔로우 요청 목록 유무 확인
+        SentFollowRequest sentFollowRequest = sentFollowRequestRepository.findByUserId(followId);
+        if (sentFollowRequest == null) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "팔로우 요청 목록을 찾을 수 없습니다.");
+        }
+
+        // 팔로우 유무 확인
+        boolean removed = sentFollowRequest.getFollowings().stream()
+                .anyMatch(existingFollowRequest -> existingFollowRequest.getFollowId().equals(userId));
+        if (!removed) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "팔로우 요청 목록에서 찾을 수 없습니다.");
+        }
+
+        // 팔로우 요청 목록에서 삭제
+        sentFollowRequest.getFollowings().removeIf(existingFollowRequest -> existingFollowRequest.getFollowId().equals(userId));
+        sentFollowRequestRepository.save(sentFollowRequest);
+
+        // 팔로우 요청 목록 비었는지 확인
+        if (sentFollowRequest.getFollowings().isEmpty()) {
+            sentFollowRequestRepository.delete(sentFollowRequest);
+        }
+
+        // 팔로잉 목록에 추가
+        following(followId, userId);
+    }
+
+    // 받은 팔로우 요청 삭제
+    private void rejectReceivedFollowRequest(String userId, String followId) {
+        // 팔로우 요청 목록 유무 확인
+        ReceivedFollowRequest receivedFollowRequest = receivedFollowRequestRepository.findByUserId(userId);
+        if (receivedFollowRequest == null) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "팔로우 요청 목록을 찾을 수 없습니다.");
+        }
+
+        // 팔로우 유무 확인
+        boolean removed = receivedFollowRequest.getFollowers().stream()
+                .anyMatch(existingFollowRequest -> existingFollowRequest.getFollowId().equals(followId));
+        if (!removed) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "팔로우 요청 목록에서 찾을 수 없습니다.");
+        }
+
+        // 팔로우 요청 목록에서 삭제
+        receivedFollowRequest.getFollowers().removeIf(existingFollowRequest -> existingFollowRequest.getFollowId().equals(followId));
+        receivedFollowRequestRepository.save(receivedFollowRequest);
+
+        // 팔로우 요청 목록 비었는지 확인
+        if (receivedFollowRequest.getFollowers().isEmpty()) {
+            receivedFollowRequestRepository.delete(receivedFollowRequest);
+        }
+    }
+
+    // 보낸 팔로우 요청 삭제
+    private void rejectSentFollowRequest(String userId, String followId) {
+        // 팔로우 요청 목록 유무 확인
+        SentFollowRequest sentFollowRequest = sentFollowRequestRepository.findByUserId(followId);
+        if (sentFollowRequest == null) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + followId, "팔로우 요청 목록을 찾을 수 없습니다.");
+        }
+
+        // 팔로우 유무 확인
+        boolean removed = sentFollowRequest.getFollowings().stream()
+                .anyMatch(existingFollowRequest -> existingFollowRequest.getFollowId().equals(userId));
+        if (!removed) {
+            throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "팔로우 요청 목록에서 찾을 수 없습니다.");
+        }
+
+        // 팔로워 목록에서 삭제
+        sentFollowRequest.getFollowings().removeIf(existingFollowRequest -> existingFollowRequest.getFollowId().equals(userId));
+        sentFollowRequestRepository.save(sentFollowRequest);
+
+        // 팔로워 목록 비었는지 확인
+        if (sentFollowRequest.getFollowings().isEmpty()) {
+            sentFollowRequestRepository.delete(sentFollowRequest);
+        }
     }
 }
