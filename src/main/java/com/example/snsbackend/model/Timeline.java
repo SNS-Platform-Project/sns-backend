@@ -1,10 +1,10 @@
 package com.example.snsbackend.model;
 
+import com.example.snsbackend.model.post.Post;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Data
 @AllArgsConstructor

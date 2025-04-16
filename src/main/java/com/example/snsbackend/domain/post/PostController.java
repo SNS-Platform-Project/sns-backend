@@ -17,30 +17,22 @@ public class PostController {
     private final CommentService commentService;
 
     @GetMapping("/{postId}")
-    public ResponseEntity<ApiResponse<PostResponse>> getPost(@PathVariable String postId) {
+    public ResponseEntity<ApiResponse<PostDetail>> getPost(@PathVariable String postId) {
         return ApiResponse.success(postService.getPost(postId));
     }
 
     @PostMapping("/regular")
-    public ResponseEntity<ApiResponse<Void>> createPost(@Valid @RequestBody PostRequest content) {
-        postService.createPost(content);
-        return ApiResponse.success();
+    public ResponseEntity<ApiResponse<String>> createPost(@Valid @RequestBody PostRequest content) {
+        return ApiResponse.success(postService.createPost(content));
     }
 
     @PostMapping("/{originalPostId}/quote")
-    public ResponseEntity<ApiResponse<Void>> createQuotePost(@PathVariable String originalPostId, @RequestBody PostRequest content) {
-        postService.createQuote(originalPostId, content);
-        return ApiResponse.success();
+    public ResponseEntity<ApiResponse<String>> createQuotePost(@PathVariable String originalPostId, @RequestBody PostRequest content) {
+        return ApiResponse.success(postService.createQuote(originalPostId, content));
     }
     @PostMapping("/{originalPostId}/repost")
-    public ResponseEntity<ApiResponse<Void>> createRepost(@PathVariable String originalPostId) {
-        try {
-            postService.createRepost(originalPostId);
-            return ApiResponse.success();
-        } catch (DuplicateKeyException e) {
-            System.out.println(e);
-            return ApiResponse.conflict();
-        }
+    public ResponseEntity<ApiResponse<String>> createRepost(@PathVariable String originalPostId) {
+        return ApiResponse.success(postService.createRepost(originalPostId));
     }
 
     @DeleteMapping("/{postId}")

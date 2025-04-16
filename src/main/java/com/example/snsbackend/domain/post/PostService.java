@@ -4,10 +4,10 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.api.ApiResponse;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.snsbackend.dto.ImageRequest;
-import com.example.snsbackend.dto.PostResponse;
 import com.example.snsbackend.jwt.CustomUserDetails;
 import com.example.snsbackend.dto.PostRequest;
 import com.example.snsbackend.model.*;
+import com.example.snsbackend.model.post.Post;
 import com.example.snsbackend.repository.*;
 import com.mongodb.client.result.DeleteResult;
 import lombok.RequiredArgsConstructor;
@@ -29,15 +29,17 @@ import java.util.*;
 @Slf4j
 @RequiredArgsConstructor
 public class PostService {
-    private final QuotePostRepository quotePostRepository;
-    private final RepostRepository repostRepository;
     private final PostRepository postRepository;
     private final MongoTemplate mongoTemplate;
     private final PostLikeRepository postLikeRepository;
     private final ProfileRepository profileRepository;
     private final CountUpdater countUpdater;
+    private final PostDetailFactory postDetailFactory;
 
-    public PostResponse getPost(String postId) {
+    public PostDetail getPost(String postId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
+
         Post post = postRepository.findById(postId).orElseThrow(() -> {
             log.warn("유효하지 않은 게시물 ID: {}", postId);
             return new NoSuchElementException("게시물 ID가 유효하지 않습니다.");
@@ -48,22 +50,20 @@ public class PostService {
             return new NoSuchElementException("사용자 ID가 유효하지 않습니다.");
         });
 
-        User user = new User(profile.getId(), profile.getUsername(), profile.getProfilePictureUrl());
-
-        return new PostResponse(post, user, null);
+        return postDetailFactory.createFrom(post, userId);
     }
 
-    public void createPost(PostRequest content) {
+    public String createPost(PostRequest content) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
-        Post post = new Post(content);
-        post.setUserId(userId);
+        Post post = Post.original().content(content).by(userId);
 
         postRepository.save(post);
+        return post.getId();
     }
 
-    public void createQuote(String originalPostId, PostRequest content) {
+    public String createQuote(String originalPostId, PostRequest content) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
@@ -72,30 +72,35 @@ public class PostService {
             throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
 
-        QuotePost post = new QuotePost(content);
-        post.setUserId(userId);
-        post.setOriginalPostId(originalPostId);
-        post.setType("quote");
+        Post quotePost = Post.quote(originalPostId).content(content).by(userId);
 
-        quotePostRepository.save(post);
+        postRepository.save(quotePost);
+        return quotePost.getId();
     }
 
-    public void createRepost(String originalPostId) {
+    public String createRepost(String originalPostId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
 
         if (!postRepository.existsById(originalPostId)) {
             log.warn("유효하지 않은 게시물 ID: {}", originalPostId);
-            throw  new NoSuchElementException("유효하지 않은 게시물 ID");
+            throw new NoSuchElementException("유효하지 않은 게시물 ID");
         }
 
-        // 기존 게시글의 repost_count 수치 증가
-        countUpdater.increment(originalPostId, "stat.repost_count", Post.class);
-        System.out.println(userDetails.getUserId());
-        System.out.println(originalPostId);
-        Repost repost = new Repost(userDetails.getUserId(), originalPostId);
-        // 리포스트 저장
-        repostRepository.save(repost);
+        boolean reposted = mongoTemplate.exists(new Query(Criteria.where("original_post_id").is(originalPostId)
+                .and("user_id").is(userId).and("type").is("repost")), Post.class);
+        if (!reposted) {
+            // 기존 게시글의 repost_count 수치 증가
+            countUpdater.increment(originalPostId, "stat.repost_count", Post.class);
+
+            Post repost = Post.repost(originalPostId).by(userId);
+
+            postRepository.save(repost);
+            return repost.getId();
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 리포스트한 게시글입니다.");
+        }
+
     }
 
     public void undoRepost(String originalPostId) {
@@ -104,7 +109,7 @@ public class PostService {
 
         DeleteResult result = mongoTemplate.remove(
                 new Query(Criteria.where("userId").is(userDetails.getUserId())
-                        .and("postId").is(originalPostId)), Repost.class);
+                        .and("originalPostId").is(originalPostId)), Post.class);
 
         if (result.getDeletedCount() > 0) {
             // 기존 게시글의 repost_count 수치 감소
@@ -137,7 +142,6 @@ public class PostService {
     private void deleteRelatedPost(String postId) {
         mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), CommentLike.class);
         mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), Comment.class);
-        mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), Repost.class);
         mongoTemplate.remove(new Query(Criteria.where("postId").is(postId)), PostLike.class);
     }
 
@@ -151,7 +155,7 @@ public class PostService {
         }
 
         postLikeRepository.save(new PostLike(postId, userId, LocalDateTime.now()));
-        countUpdater.increment(postId, "stat.likes_count", Post.class);
+        countUpdater.increment(postId, "stat.like_count", Post.class);
     }
 
     public void undoLikePost(String postId) {
@@ -164,7 +168,7 @@ public class PostService {
 
         if (result.getDeletedCount() > 0) {
             // 기존 게시글의 likes_count 수치 감소
-            countUpdater.decrement(postId, "stat.likes_count", Post.class);
+            countUpdater.decrement(postId, "stat.like_count", Post.class);
         } else {
             log.warn("사용자 {}가 게시물 {}을 좋아요한 기록이 없습니다.", userId, postId);
             throw new NoSuchElementException("사용자의 게시물 좋아요 기록 없음");
