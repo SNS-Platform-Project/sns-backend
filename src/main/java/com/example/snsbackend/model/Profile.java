@@ -32,8 +32,8 @@ public class Profile {
     @Field("birthday")
     private LocalDate birthday;
 
-    @Field("is_public")
-    private boolean isPublic;
+    @Field("is_private")
+    private boolean isPrivate;
 
     @Field(name = "created_at")
     private LocalDateTime createdAt;

@@ -57,9 +57,9 @@ public class UserController {
     }
 
     // 계정 공개 여부 설정
-    @PatchMapping("/profile/public")
+    @PatchMapping("/profile/privacy")
     public ResponseEntity<?> setPrivacy() {
-        userService.setPublic();
+        userService.setPrivacy();
         return ApiResponse.success();
     }
 

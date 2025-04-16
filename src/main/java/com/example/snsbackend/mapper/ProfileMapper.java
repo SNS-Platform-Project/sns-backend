@@ -18,9 +18,9 @@ public interface ProfileMapper {
     @AfterMapping
     default void setDefaults(@MappingTarget Profile profile) {
         profile.setBio("");
-        profile.setProfilePictureUrl(null);
+        profile.setProfilePicture(null);
         profile.setBirthday(null);
-        profile.setPublic(true);
+        profile.setPrivate(false);
         profile.setFollowersCount(0);
         profile.setFollowingCount(0);
         profile.setSocialLinks("");

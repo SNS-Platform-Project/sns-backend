@@ -112,7 +112,7 @@ public class UserService {
     }
 
     // 계정 공개 여부 설정
-    public void setPublic() {
+    public void setPrivacy() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String userId = customUserDetails.getUserId();
@@ -122,7 +122,7 @@ public class UserService {
             throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
         }
 
-        profile.get().setPublic(!profile.get().isPublic());
+        profile.get().setPrivate(!profile.get().isPrivate());
         profileRepository.save(profile.get());
     }
 
@@ -167,7 +167,7 @@ public class UserService {
             throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
         }
 
-        profile.get().setProfilePictureUrl(request.getImage());
+        profile.get().setProfilePicture(request.getImage());
         profileRepository.save(profile.get());
     }
 
@@ -182,6 +182,6 @@ public class UserService {
             throw new ApiException(ApiErrorType.NOT_FOUND, "userId: " + userId, "해당 계정을 찾지 못했습니다.");
         }
 
-        return profile.get().getProfilePictureUrl();
+        return profile.get().getProfilePicture();
     }
 }
