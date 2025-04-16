@@ -26,8 +26,8 @@ public class Profile {
 
     private String bio;
 
-    @Field("profile_picture_url")
-    private Image profilePictureUrl;
+    @Field("profile_picture")
+    private Image profilePicture;
 
     @Field("birthday")
     private LocalDate birthday;

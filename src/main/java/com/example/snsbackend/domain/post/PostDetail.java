@@ -1,5 +1,6 @@
 package com.example.snsbackend.domain.post;
 
+import com.example.snsbackend.model.Image;
 import com.example.snsbackend.model.post.PostEntities;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -55,7 +56,7 @@ public class PostDetail {
         }
         private String id;
         private LocalDateTime lastVisitedTime;
-        private String profilePicUrl;
+        private Image profilePic;
         private String username;
         private int followerCount;
         private boolean isPrivate;
