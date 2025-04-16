@@ -7,10 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -33,25 +30,35 @@ public class AuthController {
 
     // 로그아웃
     @PostMapping("/logout")
-    public void logout(HttpServletRequest request) {
+    public ResponseEntity<?> logout(HttpServletRequest request) {
         authService.logout(request);
+        return ApiResponse.success();
     }
 
     // 토큰 재발급
     @PostMapping("/refresh")
-    public JwtInfo refreshToken(HttpServletRequest request) {
-        return authService.refreshToken(request);
+    public ResponseEntity<?> refreshToken(HttpServletRequest request) {
+        return ApiResponse.success(authService.refreshToken(request));
     }
 
     // 이메일 인증 요청
     @PostMapping("/email/verify-request")
     public ResponseEntity<?> sendAuthCodeEmail(@RequestBody @Valid EmailRequest request) {
-        return authService.sendCodeToEmail(request);
+        authService.sendCodeToEmail(request);
+        return ApiResponse.success();
     }
 
     // 이메일 인증번호 확인
     @PostMapping("/email/verify")
     public ResponseEntity<?> verifyEmail(@RequestBody @Valid AuthCodeRequest request) {
-        return authService.verifyEmail(request);
+        authService.verifyEmail(request);
+        return ApiResponse.success();
+    }
+
+    // 비밀번호 초기화
+    @PatchMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody @Valid LoginRequest request) {
+        authService.resetPassword(request);
+        return ApiResponse.success();
     }
 }

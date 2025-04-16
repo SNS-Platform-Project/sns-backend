@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 @Constraint(validatedBy = NoBlankInListValidator.class)
 @Target({ ElementType.FIELD, ElementType.PARAMETER })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NoBlackInList {
+public @interface NoBlankInList {
     String message() default "List contains blank string(s)";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};

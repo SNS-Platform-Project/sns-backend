@@ -1,6 +1,8 @@
 package com.example.snsbackend.jwt;
 
 import com.example.snsbackend.dto.ApiResponse;
+import com.example.snsbackend.exception.ApiErrorType;
+import com.example.snsbackend.exception.ApiException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -22,22 +24,46 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.GenericFilterBean;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends GenericFilterBean {
     private final JwtProvider jwtProvider;
+    private static final List<String> WHITE_LIST = List.of(
+            "/api/v1/auth/login",
+            "/api/v1/auth/register",
+            "/api/v1/auth/email/verify",
+            "/api/v1/auth/email/verify-request",
+            "/api/v1/users/check-username",
+            "/api/v1/users/check-email",
+            "/api/v1/auth/reset-password",
+            "/api/v1/auth/refresh",
+            "/portfolio"
+    );
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         try {
-            // Request Header에서 토큰 추출
-            String token = TokenUtils.extractAccessTokenFromHeader((HttpServletRequest) request);
-            // 토큰 유효성 검사
-            if (token != null && jwtProvider.validateToken(token)) {
+            // Request Header에서 토큰, URI 추출
+            String accessToken = TokenUtils.extractAccessTokenFromHeader((HttpServletRequest) request);
+            String requestURI = ((HttpServletRequest) request).getRequestURI();
+
+            // White List URL은 토큰 겁사 없이 통과
+            if (WHITE_LIST.stream().anyMatch(requestURI::startsWith)) {
+                chain.doFilter(request, response);
+                return;
+            }
+
+            // Access Token 유효성 검사
+            if (accessToken != null && jwtProvider.validateToken(accessToken)) {
                 // SecurityContext에 유저 인증 정보 제공
-                Authentication authentication = jwtProvider.getAuthentication(token);
+                Authentication authentication = jwtProvider.getAuthentication(accessToken);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else if (!jwtProvider.validateToken(accessToken)) {
+                setResponse((HttpServletResponse) response,
+                        new ApiResponse<>(HttpStatus.UNAUTHORIZED, "Blacklisted Access Token.", null));
+                return;
             }
 
             chain.doFilter(request, response);
