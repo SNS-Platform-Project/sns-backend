@@ -1,5 +1,8 @@
 package com.example.snsbackend.domain.follow;
 
+import com.example.snsbackend.dto.FollowResponse;
+import com.example.snsbackend.dto.FollowerResponse;
+import com.example.snsbackend.dto.FollowingResponse;
 import com.example.snsbackend.exception.ApiErrorType;
 import com.example.snsbackend.exception.ApiException;
 import com.example.snsbackend.jwt.CustomUserDetails;
@@ -12,6 +15,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -170,21 +177,87 @@ public class FollowService {
     }
 
     // 팔로워 목록
-    public Follower follower() {
+    public FollowerResponse follower() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String userId = customUserDetails.getUserId();
 
-        return followerRepository.findByUserId(userId);
+        Follower followers = followerRepository.findByUserId(userId);
+        if (followers == null) {
+            return new FollowerResponse(null, userId, new ArrayList<>());
+        }
+
+        List<FollowResponse> follows = followers.getFollowers().stream()
+                .map(follow -> {
+                    Optional<Profile> profile = profileRepository.findById(follow.getFollowId());
+                    return profile.map(p -> new FollowResponse(follow, p.getUsername()))
+                            .orElse(null);
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        return new FollowerResponse(followers.getId(), userId, follows);
     }
 
     // 팔로잉 목록
-    public Following following() {
+    public FollowingResponse following() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String userId = customUserDetails.getUserId();
 
-        return followingRepository.findByUserId(userId);
+        Following followings = followingRepository.findByUserId(userId);
+        if (followings == null) {
+            return new FollowingResponse(null, userId, new ArrayList<>());
+        }
+
+        List<FollowResponse> follows = followings.getFollowings().stream()
+                .map(follow -> {
+                    Optional<Profile> profile = profileRepository.findById(follow.getFollowId());
+                    return profile.map(p -> new FollowResponse(follow, p.getUsername()))
+                            .orElse(null);
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        return new FollowingResponse(followings.getId(), userId, follows);
+    }
+
+    // 받은 팔로우 요청 목록
+    public FollowerResponse ReceivedFollowRequest() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        ReceivedFollowRequest followers = receivedFollowRequestRepository.findByUserId(userId);
+        if (followers == null) {
+            return new FollowerResponse(null, userId, new ArrayList<>());
+        }
+
+        List<FollowResponse> follows = followers.getFollowers().stream()
+                .map(follow -> {
+                    Optional<Profile> profile = profileRepository.findById(follow.getFollowId());
+                    return profile.map(p -> new FollowResponse(follow, p.getUsername()))
+                            .orElse(null);
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        return new FollowerResponse(followers.getId(), userId, follows);
+    }
+
+    // 보낸 팔로우 요청 목록
+    public FollowingResponse SentFollowRequest() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
+        String userId = customUserDetails.getUserId();
+
+        SentFollowRequest followings = sentFollowRequestRepository.findByUserId(userId);
+        if (followings == null) {
+            return new FollowingResponse(null, userId, new ArrayList<>());
+        }
+
+        List<FollowResponse> follows = followings.getFollowings().stream()
+                .map(follow -> {
+                    Optional<Profile> profile = profileRepository.findById(follow.getFollowId());
+                    return profile.map(p -> new FollowResponse(follow, p.getUsername()))
+                            .orElse(null);
+                }).filter(Objects::nonNull).collect(Collectors.toList());
+
+        return new FollowingResponse(followings.getId(), userId, follows);
     }
 
     // 팔로잉 추가
